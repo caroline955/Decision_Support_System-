@@ -1,0 +1,112 @@
+Đề tài: Xây dựng hệ thống AI Chatbot hỗ trợ học tập môn Data Science
+Hệ thống AI Chatbot hỗ trợ học tập môn Data Science được xây dựng nhằm giúp sinh viên có thể đặt câu hỏi, ôn tập kiến thức, xem lại nội dung bài học và nhận hỗ trợ về code trong quá trình học. Hệ thống không chỉ đóng vai trò là công cụ trả lời tự động, mà còn giúp giáo viên theo dõi quá trình học tập, phát hiện những phần kiến thức sinh viên thường xuyên gặp khó khăn, từ đó điều chỉnh bài giảng trên lớp hiệu quả hơn.
+Hệ thống gồm ba actor chính: Admin, Giáo viên và Sinh viên. Trong đó, Admin có quyền quản lý tổng thể hệ thống, quản lý môn học, lớp học và tài khoản giáo viên. Giáo viên là tài khoản cấp dưới của Admin, có quyền quản lý lớp học được phân công, sắp xếp lịch học, quản lý danh sách sinh viên và theo dõi tình hình học tập của sinh viên. Sinh viên sử dụng chatbot để đặt câu hỏi liên quan đến môn Data Science, xem nội dung bài học, hỏi kiến thức, yêu cầu giải thích thuật toán hoặc hỗ trợ viết code.
+Mối quan hệ giữa Admin và Giáo viên được thiết kế theo mô hình cha - con. Admin là tài khoản quản lý cấp cao, có quyền tạo, phân quyền, chỉnh sửa hoặc khóa tài khoản giáo viên. Giáo viên là tài khoản con, chỉ được quản lý các lớp học và sinh viên thuộc phạm vi được Admin phân công.
+Chức năng chính của Admin bao gồm quản lý giáo viên, quản lý môn học Data Science, tạo và phân công lớp học, theo dõi tổng quan hoạt động của toàn hệ thống. Admin có thể xem số lượng lớp học, số lượng sinh viên, số lượng giáo viên, tần suất sử dụng chatbot và các thống kê tổng quan liên quan đến quá trình học tập.
+Chức năng chính của Giáo viên bao gồm quản lý lớp học, quản lý danh sách sinh viên, sắp xếp lịch học, cập nhật nội dung bài học và theo dõi các vấn đề sinh viên thường gặp. Giáo viên có thể xem báo cáo từ hệ thống AI, ví dụ như sinh viên nào hỏi nhiều về một chủ đề, phần bài học nào có nhiều câu hỏi lặp lại, sinh viên nào ít tương tác hoặc có tần suất học tập thấp. Từ đó, giáo viên có thể biết rằng sinh viên ABC đang gặp khó khăn ở vấn đề XYZ và cần được hỗ trợ thêm trong quá trình học trên lớp.
+Chức năng chính của Sinh viên là sử dụng AI Chatbot để hỏi đáp về môn Data Science. Sinh viên có thể hỏi về lý thuyết, khái niệm, thuật toán, cách làm bài tập, cách viết code Python, cách xử lý dữ liệu, trực quan hóa dữ liệu hoặc giải thích các nội dung đã học trên lớp. Chatbot sẽ trả lời dựa trên dữ liệu bài học, tài liệu môn học và kiến thức liên quan đến Data Science.
+Hệ thống cần lưu lại lịch sử trò chuyện của từng sinh viên với chatbot. Mỗi câu hỏi, câu trả lời, thời gian hỏi, chủ đề liên quan và mức độ lặp lại của câu hỏi sẽ được lưu trữ. Nếu một sinh viên hỏi đi hỏi lại nhiều lần về cùng một nội dung, hệ thống sẽ ghi nhận đây là vấn đề sinh viên đang gặp khó khăn. Nếu nhiều sinh viên cùng hỏi nhiều về một phần bài học, hệ thống sẽ tổng hợp và gửi thông báo cho giáo viên để giáo viên lưu ý giảng lại hoặc bổ sung ví dụ thực tế trong buổi học tiếp theo.
+Ngoài chức năng hỏi đáp, hệ thống còn có chức năng theo dõi tần suất học tập của sinh viên. Hệ thống có thể thống kê số lần sinh viên sử dụng chatbot, thời gian học, số lượng câu hỏi đã đặt, chủ đề thường xuyên quan tâm và mức độ tương tác theo ngày, tuần hoặc tháng. Dựa vào đó, giáo viên có thể đánh giá mức độ chủ động học tập của sinh viên và phát hiện những sinh viên cần được hỗ trợ thêm.
+Mục tiêu cuối cùng của hệ thống là nâng cao hiệu quả học tập môn Data Science. Chatbot giúp sinh viên được hỗ trợ nhanh chóng ngoài giờ học, còn giáo viên có thêm dữ liệu để hiểu rõ khó khăn của sinh viên. Nhờ đó, quá trình giảng dạy trở nên cá nhân hóa hơn, bài giảng trên lớp tập trung đúng vào những phần sinh viên còn yếu và chất lượng học tập được cải thiện.
+
+Actor
+Vai trò chính
+Chức năng
+Admin
+Quản lý tổng hệ thống
+Quản lý giáo viên, lớp học, môn học, phân quyền, xem thống kê tổng quan
+Giáo viên
+Quản lý lớp và theo dõi học tập
+Sắp xếp lịch học, quản lý sinh viên, xem lịch sử hỏi đáp, nhận cảnh báo vấn đề sinh viên gặp nhiều
+Sinh viên
+Người học sử dụng chatbot
+Chat với AI, hỏi bài, hỏi code, xem nội dung bài học, lưu lịch sử học tập
+
+
+Nhóm chức năng
+Mô tả
+Quản lý tài khoản
+Admin tạo tài khoản giáo viên, giáo viên quản lý sinh viên trong lớp
+Quản lý lớp học
+Tạo lớp, phân giáo viên, thêm sinh viên vào lớp
+Quản lý môn học
+Lưu nội dung môn Data Science, bài học, tài liệu, chủ đề
+Quản lý lịch học
+Giáo viên sắp xếp lịch học cho từng lớp
+AI Chatbot
+Sinh viên hỏi đáp về kiến thức, bài học, thuật toán, code
+Lưu lịch sử chat
+Lưu câu hỏi, câu trả lời, thời gian, chủ đề, sinh viên hỏi
+Phân tích câu hỏi lặp lại
+Phát hiện sinh viên hỏi nhiều lần về cùng một vấn đề
+Thông báo cho giáo viên
+Báo cho giáo viên biết sinh viên hoặc cả lớp đang yếu phần nào
+Theo dõi tần suất học tập
+Thống kê số lần học, số câu hỏi, thời gian tương tác của sinh viên
+
+
+Database : xử lý dữ liệu vì file gốc là 
+Bảng
+Dùng để làm gì
+users
+Lưu tài khoản Admin, Giáo viên, Sinh viên
+courses
+Lưu môn học, ví dụ Data Science
+classes
+Lưu thông tin lớp học
+class_students
+Lưu sinh viên thuộc lớp nào
+schedules
+Lưu lịch học
+lessons
+Lưu bài học, nội dung môn học
+chat_sessions
+Lưu phiên trò chuyện của sinh viên
+chat_messages
+Lưu từng câu hỏi và câu trả lời
+question_topics
+Lưu chủ đề câu hỏi, ví dụ Python, Pandas, Machine Learning
+learning_analytics
+Lưu thống kê tần suất học tập
+teacher_alerts
+Lưu cảnh báo gửi cho giáo viên
+
+
+
+
+CHATBOX 
+Frontend Web
+   ↓
+Backend API
+   ↓
+AI Chatbot Engine
+   ↓
+Database + Vector Database
+   ↓
+Learning Analytics
+   ↓
+Teacher Alert / Report
+
+KIẾN TRÚC HỆ THỐNG 
+Sinh viên nhập câu hỏi
+        ↓
+Frontend gửi câu hỏi lên Backend
+        ↓
+Backend lưu câu hỏi vào chat_messages
+        ↓
+Backend tạo embedding cho câu hỏi
+        ↓
+Tìm bài học liên quan trong vector database
+        ↓
+Ghép câu hỏi + tài liệu liên quan thành prompt
+        ↓
+Gửi sang AI model
+        ↓
+AI trả lời
+        ↓
+Lưu câu trả lời vào database
+        ↓
+Phân tích chủ đề câu hỏi
+        ↓
+Nếu hỏi lặp lại nhiều lần → tạo cảnh báo cho giáo viên
+
