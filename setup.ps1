@@ -1,58 +1,110 @@
 # ========================================================================
-# setup.ps1 — Cài đặt 1 lần đầu cho cả backend + frontend + database
+# setup.ps1 — Cài đặt 1 lần đầu cho cả backend + frontend + dữ liệu mẫu
 # Chạy: .\setup.ps1
 # ========================================================================
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
+if (-not $root) { $root = Get-Location }
+
 Write-Host ""
-Write-Host "=== DS Chatbot — Setup ===" -ForegroundColor Cyan
+Write-Host "╔══════════════════════════════════════╗" -ForegroundColor Cyan
+Write-Host "║      DS Chatbot · Setup              ║" -ForegroundColor Cyan
+Write-Host "╚══════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
-# --- 1. Backend venv + deps ---
+# --- 1. Kiểm tra Python ---
+Write-Host "[1/7] Kiểm tra Python..." -ForegroundColor Yellow
+try {
+    $pyVer = python --version 2>&1
+    Write-Host "  $pyVer" -ForegroundColor DarkGray
+} catch {
+    Write-Host "  ✗ Không tìm thấy 'python'. Cài Python 3.11+ từ python.org" -ForegroundColor Red
+    exit 1
+}
+
+# --- 2. Backend: venv + deps ---
 Push-Location "$root\backend"
-if (-not (Test-Path ".venv\Scripts\python.exe")) {
-    Write-Host "[1/5] Tạo Python venv..." -ForegroundColor Yellow
+$pyExe = ".\.venv\Scripts\python.exe"
+
+if (-not (Test-Path $pyExe)) {
+    Write-Host "[2/7] Tạo virtual env..." -ForegroundColor Yellow
     python -m venv .venv
 } else {
-    Write-Host "[1/5] Venv đã tồn tại, bỏ qua." -ForegroundColor DarkGray
+    Write-Host "[2/7] Venv đã có, bỏ qua." -ForegroundColor DarkGray
 }
 
-Write-Host "[2/5] Cài thư viện Python..." -ForegroundColor Yellow
-& .\.venv\Scripts\python.exe -m pip install --upgrade pip --quiet
-& .\.venv\Scripts\python.exe -m pip install -r requirements.txt --quiet
+Write-Host "[3/7] Cài thư viện Python (có thể mất 2-3 phút)..." -ForegroundColor Yellow
+& $pyExe -m pip install --upgrade pip --quiet
+& $pyExe -m pip install -r requirements.txt --quiet
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  ✗ pip install lỗi. Xem output ở trên." -ForegroundColor Red
+    Pop-Location
+    exit 1
+}
 
-# --- 2. .env ---
+# --- 3. .env ---
 if (-not (Test-Path ".env")) {
-    Write-Host "[3/5] Tạo file .env từ .env.example..." -ForegroundColor Yellow
+    Write-Host "[4/7] Tạo .env từ .env.example..." -ForegroundColor Yellow
     Copy-Item .env.example .env
-    Write-Host "    => CHỈNH backend\.env nếu DB user/pass khác mặc định (XAMPP root/'')." -ForegroundColor Yellow
+    Write-Host "  ! Mở backend\.env để chỉnh DB_PASSWORD và GEMINI_API_KEY" -ForegroundColor Yellow
 } else {
-    Write-Host "[3/5] .env đã tồn tại, giữ nguyên." -ForegroundColor DarkGray
+    Write-Host "[4/7] .env đã có, giữ nguyên." -ForegroundColor DarkGray
 }
 
-# --- 3. Re-hash demo passwords + ingest PDF ---
-Write-Host "[4/5] Re-hash mật khẩu demo (về '123456')..." -ForegroundColor Yellow
-& .\.venv\Scripts\python.exe -m scripts.fix_demo_passwords 2>&1 | Select-Object -Last 5
+# --- 4. Re-hash demo passwords ---
+Write-Host "[5/7] Re-hash mật khẩu demo về '123456'..." -ForegroundColor Yellow
+& $pyExe -m scripts.fix_demo_passwords --all 2>&1 | Select-String "Re-hashed" | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
 
-$pdf = Get-ChildItem -Path $root -Filter "*Practical Data Science*.pdf" -File -ErrorAction SilentlyContinue | Select-Object -First 1
-if ($pdf) {
-    Write-Host "[5/5] Nạp PDF vào lessons (course DS101)..." -ForegroundColor Yellow
-    & .\.venv\Scripts\python.exe -m scripts.ingest_pdf $pdf.FullName --course DS101 --replace 2>&1 | Select-Object -Last 5
-} else {
-    Write-Host "[5/5] Không tìm thấy PDF Practical Data Science, bỏ qua ingest." -ForegroundColor DarkGray
+# --- 5. Ingest dữ liệu (PDF nếu có, fallback sách thủ công) ---
+Write-Host "[6/7] Nạp dữ liệu vào lessons..." -ForegroundColor Yellow
+
+$pdfFiles = @()
+$pdfFiles += Get-ChildItem -Path $root -Filter "sach.pdf" -File -ErrorAction SilentlyContinue
+$pdfFiles += Get-ChildItem -Path $root -Filter "*Practical Data Science*.pdf" -File -ErrorAction SilentlyContinue
+$pdfFiles += Get-ChildItem -Path $root -Filter "*.pdf" -File -ErrorAction SilentlyContinue
+
+$ingested = $false
+foreach ($pdf in $pdfFiles) {
+    Write-Host "  thử với: $($pdf.Name)" -ForegroundColor DarkGray
+    $result = & $pyExe -m scripts.ingest_pdf $pdf.FullName --course DS101 --replace 2>&1
+    if ($LASTEXITCODE -eq 0 -and ($result -match "Ingested into")) {
+        Write-Host "  ✓ Ingest từ $($pdf.Name)" -ForegroundColor Green
+        $ingested = $true
+        break
+    }
 }
+
+if (-not $ingested) {
+    Write-Host "  Không có PDF dùng được, dùng seed thủ công..." -ForegroundColor DarkGray
+    & $pyExe -m scripts.seed_lessons 2>&1 | Select-String "Seeded" | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+}
+
+# Thêm dữ liệu chat sessions/students nếu có script
+if (Test-Path "scripts\seed_more_data.py") {
+    Write-Host "  → seed thêm SV + chat data..." -ForegroundColor DarkGray
+    & $pyExe -m scripts.seed_more_data 2>&1 | Select-String "\[\+\]|Done" | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+}
+
 Pop-Location
 
-# --- 4. Frontend deps ---
+# --- 6. Frontend: npm install ---
 Push-Location "$root\frontend"
 if (-not (Test-Path "node_modules")) {
-    Write-Host "[+] Cài npm packages..." -ForegroundColor Yellow
-    npm install --silent
+    Write-Host "[7/7] Cài npm packages (có thể mất 1-2 phút)..." -ForegroundColor Yellow
+    npm.cmd install --silent
 } else {
-    Write-Host "[+] node_modules đã tồn tại, bỏ qua." -ForegroundColor DarkGray
+    Write-Host "[7/7] node_modules đã có, bỏ qua." -ForegroundColor DarkGray
 }
 Pop-Location
 
 Write-Host ""
-Write-Host "=== Setup xong ===" -ForegroundColor Green
-Write-Host "Bước tiếp theo: .\start-dev.ps1" -ForegroundColor Cyan
+Write-Host "╔══════════════════════════════════════╗" -ForegroundColor Green
+Write-Host "║  Setup hoàn tất                      ║" -ForegroundColor Green
+Write-Host "╠══════════════════════════════════════╣" -ForegroundColor Green
+Write-Host "║  Bước tiếp:  .\start-dev.ps1         ║" -ForegroundColor Green
+Write-Host "╚══════════════════════════════════════╝" -ForegroundColor Green
+Write-Host ""
+Write-Host "Tài khoản demo (password '123456'):" -ForegroundColor Cyan
+Write-Host "  admin@uni.edu.vn       (Admin)" -ForegroundColor DarkGray
+Write-Host "  huong.tt@uni.edu.vn    (Giáo viên)" -ForegroundColor DarkGray
+Write-Host "  an.ph@student.uni.edu.vn (Sinh viên)" -ForegroundColor DarkGray

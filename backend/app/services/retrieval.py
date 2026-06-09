@@ -84,11 +84,33 @@ def detect_topic_slug(question: str) -> Optional[str]:
     """Tiny heuristic mapping question -> topic slug (used to tag chat_messages)."""
     q = question.lower()
     rules = [
-        ("pandas",         ["pandas", "dataframe", "groupby", "merge", "csv"]),
-        ("python",         ["python", "list", "dict", "comprehension", "lambda"]),
-        ("visualization",  ["matplotlib", "seaborn", "biểu đồ", "plot", "histogram"]),
-        ("linear-regression", ["linear regression", "hồi quy", "linearregression", "mse"]),
-        ("classification", ["classification", "logistic", "phân loại", "confusion"]),
+        # Foundations
+        ("python",         ["python", "list comprehension", "lambda", "dict", "tuple"]),
+        ("pandas",         ["pandas", "dataframe", "groupby", "merge", "csv", "pivot"]),
+        ("numpy",          ["numpy", "ndarray", "array", "broadcasting", "vectoriz"]),
+        ("visualization",  ["matplotlib", "seaborn", "biểu đồ", "plot", "histogram",
+                            "scatter", "heatmap", "visualization"]),
+        # Statistical / ML
+        ("linear-regression", ["linear regression", "hồi quy", "linearregression", "mse", "r²", "r2"]),
+        ("regression",     ["regression", "regress"]),
+        ("classification", ["classification", "logistic", "phân loại", "confusion",
+                            "precision", "recall", "f1"]),
+        ("decision-tree",  ["decision tree", "cây quyết định", "random forest",
+                            "gini", "entropy", "splitting"]),
+        ("neural-network", ["neural network", "deep learning", "nơ-ron", "noron",
+                            "perceptron", "ann", "mlp", "hidden layer", "backprop"]),
+        ("cluster",        ["cluster", "k-means", "kmeans", "phân cụm", "dbscan",
+                            "hierarchical", "silhouette"]),
+        ("association",    ["association rule", "apriori", "luật kết hợp", "market basket",
+                            "support", "confidence", "lift"]),
+        # Domain
+        ("text-mining",    ["text mining", "tf-idf", "tfidf", "stopword", "tokeniz", "nlp", "khai phá văn bản"]),
+        ("web-mining",     ["web mining", "scraping", "crawling", "page rank", "khai phá web"]),
+        ("big-data",       ["big data", "hadoop", "spark", "mapreduce", "dữ liệu lớn"]),
+        ("data-warehouse", ["data warehouse", "etl", "olap", "kho dữ liệu", "dimensional model", "star schema"]),
+        ("data-mining",    ["data mining", "khai phá dữ liệu", "kdd"]),
+        ("eda",            ["eda", "exploratory", "khám phá dữ liệu", "outlier", "missing value"]),
+        ("business-intel", ["business intelligence", "bi ", "kpi", "dashboard"]),
     ]
     for slug, kws in rules:
         if any(kw in q for kw in kws):

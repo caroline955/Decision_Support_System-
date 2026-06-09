@@ -2,7 +2,7 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -18,6 +18,7 @@ from app.models import (
 from app.schemas import (
     ClassIn,
     ClassOut,
+    ClassPatch,
     CourseIn,
     CourseOut,
     EnrollIn,
@@ -50,7 +51,52 @@ def create_course(
     return course
 
 
+@router.patch("/courses/{course_id}", response_model=CourseOut,
+              dependencies=[Depends(require_admin)])
+def update_course(course_id: int, payload: CourseIn, db: Session = Depends(get_db)):
+    course = db.get(Course, course_id)
+    if not course:
+        raise HTTPException(404, "Course not found")
+    course.code = payload.code
+    course.name = payload.name
+    course.description = payload.description
+    db.commit()
+    db.refresh(course)
+    return course
+
+
+@router.delete("/courses/{course_id}", dependencies=[Depends(require_admin)])
+def delete_course(course_id: int, db: Session = Depends(get_db)):
+    course = db.get(Course, course_id)
+    if not course:
+        raise HTTPException(404, "Course not found")
+    db.delete(course)  # cascade xoá lessons, classes (theo schema FK)
+    db.commit()
+    return {"ok": True}
+
+
 # ---------- Classes ----------
+def _serialize_class(cls: Class_, db: Session) -> dict:
+    teacher = db.get(User, cls.teacher_id)
+    course = db.get(Course, cls.course_id)
+    student_count = db.execute(
+        select(func.count()).select_from(ClassStudent).where(ClassStudent.class_id == cls.id)
+    ).scalar_one()
+    return {
+        "id": cls.id,
+        "course_id": cls.course_id,
+        "teacher_id": cls.teacher_id,
+        "name": cls.name,
+        "semester": cls.semester,
+        "start_date": cls.start_date,
+        "end_date": cls.end_date,
+        "is_active": cls.is_active,
+        "teacher_name": teacher.full_name if teacher else None,
+        "course_code": course.code if course else None,
+        "student_count": student_count,
+    }
+
+
 @router.get("/classes", response_model=List[ClassOut])
 def list_classes(
     db: Session = Depends(get_db),
@@ -62,7 +108,8 @@ def list_classes(
     elif current.role == "student":
         sub = select(ClassStudent.class_id).where(ClassStudent.student_id == current.id)
         stmt = stmt.where(Class_.id.in_(sub))
-    return db.execute(stmt).scalars().all()
+    rows = db.execute(stmt).scalars().all()
+    return [_serialize_class(c, db) for c in rows]
 
 
 @router.post("/classes", response_model=ClassOut, status_code=201,
@@ -72,7 +119,29 @@ def create_class(payload: ClassIn, db: Session = Depends(get_db)):
     db.add(cls)
     db.commit()
     db.refresh(cls)
-    return cls
+    return _serialize_class(cls, db)
+
+
+@router.patch("/classes/{class_id}", response_model=ClassOut,
+              dependencies=[Depends(require_admin)])
+def update_class(class_id: int, payload: ClassPatch, db: Session = Depends(get_db)):
+    cls = db.get(Class_, class_id)
+    if not cls:
+        raise HTTPException(404, "Class not found")
+    if payload.teacher_id is not None:
+        teacher = db.get(User, payload.teacher_id)
+        if not teacher or teacher.role != "teacher":
+            raise HTTPException(400, "Teacher id không hợp lệ")
+        cls.teacher_id = payload.teacher_id
+    if payload.name is not None:
+        cls.name = payload.name
+    if payload.semester is not None:
+        cls.semester = payload.semester
+    if payload.is_active is not None:
+        cls.is_active = payload.is_active
+    db.commit()
+    db.refresh(cls)
+    return _serialize_class(cls, db)
 
 
 @router.post("/classes/enroll", status_code=201,
@@ -134,6 +203,32 @@ def create_lesson(payload: LessonIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(lesson)
     return lesson
+
+
+@router.patch("/lessons/{lesson_id}", response_model=LessonOut,
+              dependencies=[Depends(require_teacher)])
+def update_lesson(lesson_id: int, payload: LessonIn, db: Session = Depends(get_db)):
+    lesson = db.get(Lesson, lesson_id)
+    if not lesson:
+        raise HTTPException(404, "Lesson not found")
+    lesson.course_id = payload.course_id
+    lesson.title = payload.title
+    lesson.content = payload.content
+    lesson.file_url = payload.file_url
+    lesson.order_index = payload.order_index
+    db.commit()
+    db.refresh(lesson)
+    return lesson
+
+
+@router.delete("/lessons/{lesson_id}", dependencies=[Depends(require_teacher)])
+def delete_lesson(lesson_id: int, db: Session = Depends(get_db)):
+    lesson = db.get(Lesson, lesson_id)
+    if not lesson:
+        raise HTTPException(404, "Lesson not found")
+    db.delete(lesson)
+    db.commit()
+    return {"ok": True}
 
 
 # ---------- Class details (students of a class) ----------

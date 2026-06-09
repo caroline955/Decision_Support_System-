@@ -9,6 +9,7 @@ import AdminTeachers from "./pages/admin/AdminTeachers";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminCourses from "./pages/admin/AdminCourses";
 import AdminClasses from "./pages/admin/AdminClasses";
+import AdminChatbox from "./pages/admin/AdminChatbox";
 
 import TeacherLayout from "./layouts/TeacherLayout";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="students" element={<AdminStudents />} />
         <Route path="courses" element={<AdminCourses />} />
         <Route path="classes" element={<AdminClasses />} />
+        <Route path="chatbox" element={<AdminChatbox />} />
       </Route>
 
       <Route

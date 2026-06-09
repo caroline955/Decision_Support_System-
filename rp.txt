@@ -1,0 +1,3075 @@
+2. Objectives of the Study
+2.1. General Objective
+The general objective of this project is to build an AI Chatbot system that supports students in learning Data Science while exploiting question-answering data to generate signals that assist lecturers in monitoring learning activities and making instructional decisions.
+The system is oriented as a prototype Decision Support System in education, where the chatbot serves as the student interaction point, conversational data is stored and processed, and lecturers receive analytics and alerts to support early observation and intervention when necessary.
+ 
+2.2. Specific Objectives
+To achieve the general objective, the project focuses on the following specific objectives:
+To develop a web application with three main roles: Admin, Teacher, and Student, in which each role has its own interface, functions, and data access scope.
+To build the backend using FastAPI, organized by routers and services, providing APIs for authentication, academic data management, chatbot processing, retrieval, analytics, alerts, and admin statistics.
+To build the frontend using React, Vite, TypeScript, and Tailwind CSS, organized by layouts and pages for each role to ensure a clear and role-appropriate user interface.
+To design a MySQL database for managing users, courses, classes, schedules, lessons, chat sessions, chat messages, learning analytics, and teacher alerts.
+To develop a chatbot that allows students to ask questions related to Data Science and stores chat history so that students can review previous interactions and the backend can use the data for analysis.
+To implement a keyword retrieval mechanism for finding lessons related to students’ questions. In the current version, the system uses keyword scoring instead of a vector database to prioritize simplicity, explainability, and suitability for a local demo environment.
+To implement an analytics mechanism based on the number of times a student repeatedly asks about the same topic within a certain period. The system calculates repeat score and stores or updates the result in the learning_analytics table.
+To implement an alert mechanism for lecturers when a student repeatedly asks about the same topic. Specifically, when a student asks about the same topic three or more times within seven days, the system generates a repeat-question alert so that the lecturer can observe the issue and consider providing support.
+To provide an admin dashboard that displays system-level statistics, including users, teachers, students, courses, classes, lessons, enrollments, chat sessions, chat messages, and alerts.
+To test the system from multiple perspectives, including functional testing, API testing, role-based access control testing, data consistency testing, chatbot flow testing, retrieval testing, analytics and alert testing, error handling testing, and basic performance testing.
+ 
+3. Research Objects and Scope
+3.1. Target Users
+The system is designed for three main user groups. The first user group is Admin. Admins are responsible for managing general system data. They can log in, view statistical dashboards, manage teachers, students, courses, classes, and perform administrative tasks such as recomputing analytics.
+The second user group is Teacher. Teachers directly teach and monitor classes. They can view assigned classes, view class details, view students in a class, view or create schedules, view learning analytics in class details, view AI alerts, and mark alerts as read.
+The third user group is Student. Students use the chatbot to support their learning. They can log in, view enrolled classes, view schedules, ask the chatbot, view retrieved related lessons, review chat history, and view personal analytics on the dashboard.
+ 
+3.2. System Scope
+The system is implemented as a web application running in a localhost demo environment. The backend runs with FastAPI and Uvicorn, the frontend runs with React and Vite, and the database uses MySQL through XAMPP or an equivalent MySQL environment.
+The data used in this project consists of internal data and simulated seed data for demonstration, functional testing, and illustrating the analytics and alert mechanisms. The learning content focuses on the Data Science subject. The lessons table can be created from seed data or populated through a PDF ingestion script to support keyword retrieval.
+In the current version, retrieval is implemented using keyword scoring, without a vector database or embedding-based retrieval. This approach is suitable for the prototype scope because it is simple to implement, explainable, and directly testable. The system supports multiple LLM providers, such as mock, Gemini, OpenAI, or Ollama, depending on the configuration. If the mock provider is used, the chatbot is evaluated only in terms of functional flow and not in terms of actual AI response quality.
+In terms of decision support, the current system focuses on repeat-question alerts. The backend analyzes how many times a student repeatedly asks about the same topic within seven days, calculates repeat score, and generates an alert for the lecturer when the threshold is reached. More advanced metrics, such as Engagement Score based on SAW/MCDM, topic diversity, engagement ranking, top topics chart, or activity trend chart, are not considered completed functions in the current implementation.
+ 
+3.3. Out of Scope
+The project does not deploy the system to a production cloud environment. Issues such as HTTPS, production logging, monitoring, load balancing, advanced rate limiting, and in-depth security auditing are outside the current scope.
+The project does not integrate with real Learning Management Systems such as Moodle, Canvas, or Google Classroom. Users, classes, schedules, lessons, and conversations are created as simulated seed data.
+The project does not fine-tune an LLM or build a new language model. The system only integrates available providers or a mock provider through configuration. If a real provider such as Gemini, OpenAI, or Ollama is used, the response quality depends on the provider, prompt, retrieval context, and testing time.
+The project does not evaluate the system using real student data and does not claim to predict final grades. The current analytics serve only as reference signals for lecturers and do not replace professional judgment or official academic assessment.
+The current version also does not implement a vector database. Future work may include embedding retrieval, vector search, Engagement Score based on SAW/MCDM, topic diversity, engagement ranking, top topics chart, activity trend chart, low-activity alerts, and narrow-topic alerts.
+ 
+4. Methodology
+The project is conducted through the analysis, design, implementation, and testing of a full - stack software system. First, system requirements are analyzed based on user actors. The three main user groups, Admin, Teacher, and Student, are identified together with their corresponding functions. Actor-based analysis helps separate permissions, interfaces, and usage flows for each user group.
+Second, a relational database is designed to store the main entities of the system, including users, courses, classes, schedules, lessons, chat sessions, chat messages, learning analytics, and teacher alerts. The database design provides the foundation for managing academic data, storing conversation history, and supporting dashboards and analytics.
+Third, the overall system architecture is designed according to the frontend-backend-database model. The frontend is built with React, Vite, TypeScript, and Tailwind CSS. The backend is built with FastAPI. The database uses MySQL. This architecture separates the user interface, business logic, and data storage layers, improving maintainability and extensibility.
+During implementation, the backend is organized by routers and services to separate functional groups such as authentication, user management, academic data, chatbot, analytics, alert, and admin statistics. The frontend is organized by layouts and pages for each role to ensure consistent and role-appropriate user interfaces.
+For the chatbot function, the system implements a processing flow that includes checking the Student role, creating or retrieving a chat session, detecting the topic using keyword heuristics, retrieving related lessons, calling the LLM provider, saving the student’s message and the bot’s response, and returning the result to the frontend. Retrieval is implemented using keyword scoring, where keywords appearing in the title have a higher weight than keywords appearing in the content.
+For the analytics and alert components, the system implements a mechanism to detect repeated questions about the same topic within seven days. From chat messages, the system calculates repeat score, updates the learning_analytics table, and creates a teacher_alert when the number of repeated questions reaches the threshold. This mechanism is the main decision-support component in the current version.
+Finally, the system is tested through multiple test groups, including functional testing, role-based access control testing, API testing, chatbot flow testing, retrieval testing, analytics and alert testing, data consistency testing between the user interface and database, error handling testing, and basic performance testing. These tests demonstrate that the system is not only a user interface but also has a complete data flow from frontend to backend and database.
+ 
+5. Contributions of the Project
+The project makes the following main contributions:
+It builds a full-stack prototype with three roles: Admin, Teacher, and Student, in which each role has its own interface and functions.
+It integrates a learning chatbot with conversation history, allowing students to ask questions about Data Science and review previous chat sessions.
+It implements a keyword-scoring mechanism to retrieve lessons related to students’ questions, linking chatbot interaction with learning content stored in the database.
+It designs a database that stores academic data, schedules, lessons, chat sessions, chat messages, learning analytics, and teacher alerts.
+It implements a mechanism for detecting repeated questions about the same topic based on chat messages and question topics.
+It provides AI alerts for lecturers when a student asks about the same topic three or more times within seven days, helping lecturers observe possible learning difficulties and intervene when necessary.
+It provides an admin statistics dashboard that helps admins monitor users, courses, classes, lessons, chat sessions, chat messages, and alerts.
+It implements and tests an end-to-end system flow, including login, role-based access control, academic data management, chatbot processing, retrieval, chat history storage, analytics, and teacher alerts.
+These contributions show that the project is not limited to building a standalone question-answering chatbot. Instead, it moves toward a system that records and uses learning interaction data to support lecturers in instructional decision-making.
+ 
+
+ 
+CHAPTER 1. THEORETICAL BACKGROUND AND RELATED WORK
+This chapter presents the theoretical foundations that directly support the development of the AI Chatbot system for Data Science learning. The system is positioned as a prototype Decision Support System in education. Its main purpose is not only to answer students’ questions, but also to collect learning interaction data, analyze repeated questions by topic, and provide alerts that help lecturers observe possible learning difficulties. Therefore, this chapter focuses on the concepts that are directly connected to the implemented system: Decision Support System, Simon’s decision-making model, educational chatbots, Large Language Models, retrieval-based question answering, Learning Analytics, Early Warning, and related work.
+1.1. Decision Support System
+A Decision Support System, or DSS, is an information system designed to support human decision-making, especially in situations where decisions are not fully structured or cannot be completely automated (Turban et al., 2011). In education, many decisions made by lecturers belong to this category. For example, a lecturer may need to decide whether to review a topic, provide additional materials, or support a student who seems to be struggling. These decisions require professional judgment, but they can be supported by learning data.
+In this project, the DSS concept is applied to the teaching context. The system does not make decisions on behalf of lecturers. Instead, it collects data from student-chatbot interactions, analyzes repeated questions by topic, and generates alerts when a student repeatedly asks about the same topic. These alerts act as signals that help lecturers observe possible learning problems and decide whether further action is needed.
+A DSS usually consists of three main components: Data Management, Model Management, and User Interface. In this system, Data Management is represented by the MySQL database, which stores users, courses, classes, lessons, chat_sessions, chat_messages, learning_analytics, and teacher_alerts. Model Management is represented by simple but explainable logic, including keyword-based topic detection, keyword retrieval, repeat_score calculation, and repeat-question alert rules. User Interface is represented by the Admin, Teacher, and Student portals, where different users interact with the system according to their roles.
+Therefore, the system can be considered a DSS prototype because it has the three essential elements: data, analytical logic, and an interface for decision support. However, it is important to clarify that the system does not include a complex prediction model. Its decision-support function is currently limited to detecting repeated questions and presenting alerts to lecturers.
+1.2. Decision-Making Process in Teaching
+Simon’s decision-making model includes four stages: Intelligence, Design, Choice, and Implementation (Simon, 1977). This model is useful for explaining how the system supports lecturers in the teaching process. The Intelligence stage is about identifying a problem. The Design stage is about analyzing the problem and preparing possible actions. The Choice stage is about selecting an appropriate action. The Implementation stage is about carrying out that action in practice.
+In this project, the Intelligence stage corresponds to collecting student interaction data. When a student asks the chatbot, the system stores the chat session, message content, detected topic, and related lessons. The Design stage corresponds to analyzing that data. The backend checks how many times the student has asked about the same topic within seven days and calculates a repeat_score. The Choice stage happens when the lecturer views the generated alert and decides what to do. The Implementation stage happens when the lecturer takes action, such as reviewing the topic in class, sending additional materials, or contacting the student.
+This mapping is important because it explains why the system is more than a chatbot. The chatbot is the entry point for collecting learning data, while the analytics and alert mechanism support the lecturer’s decision-making process. The system does not automate teaching decisions, but it helps lecturers identify signals that may otherwise be missed.
+1.3. Chatbots in Education
+An educational chatbot is a software system that allows learners to interact through a conversational interface for learning purposes. It can answer questions, provide explanations, suggest learning materials, and support students outside classroom hours. Studies on educational chatbots show that they can support learning through quick responses, mentoring, guidance, and personalization (Wollny et al., 2021).
+In this project, the chatbot is used to support students in learning Data Science. Students can ask questions related to topics such as pandas, missing values, train-test split, clustering, overfitting, or confusion matrix. The chatbot helps students receive support during self-study and allows them to review previous conversations through stored chat history.
+However, the chatbot in this system has another important role: it creates learning interaction data. Each student question is stored as a chat message and can be analyzed later. When a student repeatedly asks about the same topic, the system can use this pattern to generate an alert for the lecturer. Therefore, the chatbot is not only a question-answering tool, but also the starting point of the Learning Analytics and Decision Support flow.
+The limitations of chatbots must also be acknowledged. A chatbot may provide incorrect or incomplete answers, especially when using a real LLM provider. The quality of the answer depends on the model, prompt, retrieval context, and learning materials stored in the database. If the system uses a mock provider, it can only be used to test the functional flow, not to evaluate real AI response quality. For this reason, the report must clearly distinguish between functional testing and chatbot response quality evaluation.
+1.4. Large Language Model and LLM Provider
+A Large Language Model, or LLM, is a model capable of understanding and generating natural language text. In chatbot systems, an LLM can be used to generate answers, explain concepts, and provide examples. In this project, the LLM is used in the response generation step after the student submits a question and the system retrieves related lessons.
+The system is designed to support different LLM providers through configuration, including Mock, Gemini, OpenAI, and Ollama. The Mock provider is mainly used for functional testing. It allows the developer to verify whether the chatbot flow works correctly, including sending a question, receiving a response, saving chat messages, returning related lessons, and updating analytics. However, because mock responses are simulated, they cannot be used to evaluate real AI answer quality.
+Gemini and OpenAI are cloud-based providers that can generate more natural answers, while Ollama can be used for local models. If a real provider is used for evaluation, the report must state the provider name, model version, testing date, prompt template, and retrieval mode. This is necessary to ensure transparency and reproducibility. Without this information, chatbot evaluation results would be difficult to verify.
+1.5. Retrieval-Based Question Answering
+Retrieval is the process of finding relevant documents or content based on a user’s question. In chatbot systems, retrieval helps provide context so that the answer can be more closely connected to the available learning materials. Retrieval-Augmented Generation shows the value of combining generated answers with externally retrieved knowledge (Lewis et al., 2020).
+In this project, retrieval is used to find lessons related to a student’s question. The current system uses keyword retrieval rather than vector retrieval. When a student submits a question, the system tokenizes the question, removes stopwords, compares keywords with lesson titles and lesson content, calculates a score, ranks candidate lessons, and returns the top related lessons.
+The scoring formula used in the current system is:
+score = 3 × title_overlap + 1 × content_overlap
+This means that a keyword appearing in the lesson title has higher importance than a keyword appearing only in the lesson content. This design is reasonable because the title usually represents the main topic of the lesson. For example, if a student asks “What is pandas groupby used for?”, lessons with keywords such as “pandas” or “groupby” in the title or content will receive a higher score.
+Keyword retrieval is chosen because it is simple, explainable, and suitable for a local prototype. It does not require embeddings, a vector database, or additional infrastructure. However, it also has limitations. It may fail when students use different wording, synonyms, or paraphrased questions. It also depends heavily on the quality of lesson titles and content. Therefore, vector retrieval or embedding-based search is considered a future improvement, not a completed feature of the current system.
+1.6. Learning Analytics and Early Warning
+Learning Analytics is the process of collecting, measuring, analyzing, and reporting data about learners and learning contexts in order to understand and improve learning and teaching (Siemens & Long, 2011). In this project, the main source of learning analytics data is chatbot interaction. Each time a student asks a question, the system stores the message, timestamp, chat session, detected topic, and related lessons.
+The current analytics mechanism focuses on repeated questions by topic. If a student asks about the same topic multiple times within seven days, this may indicate that the student is interested in or struggling with that topic. The system uses this pattern to calculate repeat_score and generate teacher alerts.
+The repeat_score is calculated as:
+repeat_score = min(1.0, n / 5.0)
+In this formula, n is the number of times a student asks about the same topic within seven days. If n = 0, repeat_score = 0 and no alert is generated. The value 5 is used as an experimental threshold: when a student asks about the same topic five or more times within seven days, repeat_score reaches 1.0. This parameter can be adjusted in a real deployment.
+Early Warning in education refers to mechanisms that detect early signs that a student may need support. Course Signals at Purdue is an example of using learning data to support early intervention (Arnold & Pistilli, 2012). In the current system, Early Warning is implemented in a simple and explainable form: repeat-question alert. If a student asks about the same topic three or more times within seven days, the system creates a teacher_alert with alert_type = repeat_question. If the number of repeated questions is three or four, the severity is medium. If it is five or more, the severity is high.
+This alert does not prove that the student is weak or does not understand the topic. It only provides a signal for the lecturer to observe further. This is an important limitation. The system currently does not measure full engagement, does not predict final grades, and does not implement advanced models such as Engagement Score SAW/MCDM or topic diversity. These features are future work.
+
+ 
+1.7. Related Work
+Related studies can be grouped into five main areas: educational chatbots, retrieval/RAG, Learning Analytics, Early Warning Systems, and DSS in education. Educational chatbot studies show that chatbots can support students through question answering, guidance, and automated feedback. Wollny et al. (2021) reviewed chatbot applications in education and identified roles such as communication support, mentoring, and personalization. However, many chatbot systems focus mainly on answering students’ questions and do not deeply exploit conversational data for lecturer decision support.
+Retrieval and RAG studies focus on retrieving relevant context to improve answer generation. Lewis et al. (2020) introduced Retrieval-Augmented Generation as a method that combines generative language models with retrieved knowledge. Compared with full RAG systems, this project only implements keyword retrieval. It does not include embeddings, vector databases, or strong paraphrase handling. However, keyword retrieval is appropriate for the current prototype because it is transparent and easy to test.
+Learning Analytics studies focus on using learning data to understand and support the learning process. Siemens and Long (2011) emphasized the importance of analytics in improving education through data-informed insight. In this project, Learning Analytics is implemented in a narrow but practical way: chatbot interaction data is used to calculate repeat_score and support teacher alerts.
+Early Warning Systems aim to detect students who may need support before problems become serious. Arnold and Pistilli (2012) introduced Course Signals as an example of using learning analytics for early intervention. The current system does not implement a full early warning model. It focuses only on repeat-question alerts, which are explainable and directly connected to chatbot interaction data.
+DSS in education focuses on supporting data-informed decisions by lecturers or administrators. From the DSS perspective, a system should include data, processing logic, and an interface for decision support (Turban et al., 2011). The system in this project satisfies these elements at the prototype level: MySQL stores learning data, keyword retrieval and repeat_score provide processing logic, and dashboards plus teacher alerts present information to users.
+Research Area/System Type
+Representative Reference
+Main Focus
+Relation to This Project
+Educational chatbots
+Wollny et al. (2021)
+Student support through chatbot interaction
+The system uses chatbot interaction both for student support and data collection
+Retrieval/RAG
+Lewis et al. (2020)
+Retrieving context for answer generation
+The system uses keyword retrieval to find related lessons
+Learning Analytics
+Siemens & Long (2011)
+Using learning data to understand learning behavior
+The system analyzes repeated questions by topic
+Early Warning System
+Arnold & Pistilli (2012)
+Detecting students who may need support
+The system generates repeat-question alerts
+DSS in education
+Turban et al. (2011)
+Supporting decision-making with data and logic
+The system provides data, alert logic, and dashboards for lecturers
+
+The gap addressed by this project is the integration of these components into a concrete prototype for the Data Science subject. The system does not attempt to build a complex AI model. Instead, it focuses on a clear and verifiable flow: students ask the chatbot, the system retrieves related lessons, stores chat history, analyzes repeated questions by topic, generates alerts for lecturers, and displays information on dashboards. This positioning gives the project practical value while avoiding over-claiming. The system is still a prototype, but it demonstrates how chatbot interaction data can be transformed into information that supports lecturers’ decision-making.
+ 
+ 
+ 
+ 
+ 
+CHAPTER 2. SYSTEM REQUIREMENT ANALYSIS
+2.1. Problem Description
+The proposed system is an AI Chatbot System for Data Science learning, designed as a Decision Support System prototype for teaching and learning support. The system focuses on three main user groups: Admin, Teacher, and Student.
+In a Data Science course, students often face difficulties with technical topics such as Python programming, pandas, data visualization, linear regression, classification, and model evaluation. When students do not fully understand a concept, they may repeatedly ask similar questions. However, in a traditional teaching environment, teachers may not immediately know which students are struggling or which topics are being asked about most frequently. The system addresses this problem by allowing students to ask questions through a chatbot. Each chatbot interaction is stored as chat history. The system also detects the topic of the student’s question, retrieves related lessons using keyword-based retrieval, generates an answer using an LLM provider, and stores both the student question and the bot response. From the teacher’s perspective, the system provides learning analytics and AI alerts. When a student asks about the same topic repeatedly within a recent period, the system can generate an alert for the teacher. This allows the teacher to identify possible learning difficulties and decide whether to review a topic, contact a student, or provide additional learning materials. From the admin’s perspective, the system provides an overview dashboard showing statistics such as the number of users, teachers, students, courses, classes, lessons, enrollments, chat sessions, chat messages, and alerts. Admins can also manage teachers, students, courses, and classes.
+Therefore, the system is not only a chatbot for answering questions. It is a prototype Decision Support System in which chatbot interactions become learning behavior data, and that data is transformed into simple decision-support signals for teachers and administrators.
+2.2. System Actors
+The system has three main human actors: Admin, Teacher, and Student. In addition, the system contains internal service actors such as the Retrieval Service, LLM Service, Analytics Engine, Alert Engine, and Database.
+This actor model follows the original requirement in which Admin and Teacher have a parent-child management relationship. Admin is the high-level account that manages teacher accounts and assigns classes. Teacher accounts operate within the scope assigned by Admin and are responsible for monitoring students, schedules, chat history signals, analytics and alerts in their classes.
+2.2.1. Admin
+Admin is responsible for managing the overall system. Admin can log in, view system statistics, manage teachers, manage students, create courses, create classes, and run analytics recomputation.
+Main responsibilities of Admin:
+●  	Log in to the system.
+●  	View the admin dashboard.
+●  	View system statistics.
+●  	Manage teacher accounts.
+●  	Manage student accounts.
+●  	Create and view courses.
+●  	Create and view classes.
+●  	Run analytics recomputation.
+●  	Monitor the overall amount of chat and alert data.
+2.2.2. Teacher
+Teacher is responsible for managing and monitoring assigned classes. A teacher can view only the classes assigned to them. In the class detail page, the teacher can view students, schedules, and learning analytics. The teacher can also view AI alerts generated from repeated student questions.
+Main responsibilities of Teacher:
+●  	Log in to the system.
+●  	View assigned classes.
+●  	View class detail.
+●  	View students in a class.
+●  	View class schedules.
+●  	Create schedules.
+●  	View learning analytics of assigned classes.
+●  	View AI alerts.
+●  	Mark alerts as read.
+2.2.3. Student
+Student is the main user of the chatbot. A student can view enrolled classes, view schedules, ask the chatbot, see related lesson references, and review previous chat history.
+Main responsibilities of Student:
+●  	Log in to the system.
+●  	View enrolled classes.
+●  	View class schedules.
+●  	Ask the AI chatbot.
+●  	View related lessons returned by the retrieval module.
+●  	View chat history.
+●  	View personal analytics in the student dashboard.
+2.2.4. Internal System Actors
+The system also includes internal service actors:
+Internal Actor
+Responsibility
+Retrieval Service
+Finds related lessons based on the student’s question using keyword scoring.
+LLM Service
+Generates chatbot answers using Mock, Gemini, OpenAI, or Ollama provider.
+Analytics Engine
+Recomputes learning analytics from chat data.
+Alert Engine
+Generates teacher alerts when repeated-question rules are satisfied.
+Database
+Stores users, courses, classes, lessons, chat sessions, chat messages, analytics, and alerts.
+
+Table 2.1. Internal System Actors
+2.3. Actor Permission Matrix
+The permission matrix below is written according to the current code implementation. In particular, the chatbot asking endpoint is only available to students. Admin and Teacher are not allowed to ask the chatbot through /api/chat/ask.
+Function
+Admin
+Teacher
+Student
+Note
+Login
+Yes
+Yes
+Yes
+All roles use /api/auth/login.
+View admin statistics
+Yes
+No
+No
+/api/admin/stats requires admin role.
+View users
+Yes
+Limited
+Limited
+Teacher sees students in assigned classes; Student sees self.
+Manage users
+Yes
+No
+No
+Admin can create, activate/deactivate, and delete users.
+View courses
+Yes
+Yes
+Yes
+/api/courses is available in the current backend.
+Create courses
+Yes
+No
+No
+Requires admin role.
+View classes
+Yes
+Yes
+Yes
+Admin sees all classes; Teacher sees assigned classes; Student sees enrolled classes.
+Create classes
+Yes
+No
+No
+Requires admin role.
+Enroll students
+Yes
+Yes
+No
+Teacher/Admin permission is used.
+View schedules
+Yes
+Yes
+Yes
+Requires authenticated user.
+Create schedules
+Yes
+Yes
+No
+Teacher/Admin permission is used.
+View lessons
+Yes
+Yes
+Yes
+Lessons can be listed by course.
+Create lessons
+Yes
+Yes
+No
+Backend API exists; there is no separate frontend lesson management page.
+Ask chatbot
+No
+No
+Yes
+/api/chat/ask checks that the current user role is student.
+View chat history
+No in UI
+No in UI
+Yes
+Student has /student/history.
+View own analytics
+No in UI
+No in UI
+Yes
+Student dashboard calls /api/analytics/me.
+View class analytics
+Yes
+Yes
+No
+/api/analytics/class/{class_id} allows teacher/admin.
+View AI alerts
+Limited
+Yes
+No
+Teacher has /teacher/alerts; admin has API access depending on backend role guard but no separate Admin Alerts page.
+Mark alert as read
+Limited
+Yes
+No
+Teacher can mark alerts as read.
+Recompute analytics
+Yes
+No
+No
+/api/analytics/recompute requires admin role.
+Manage system data
+Yes
+No
+No
+Admin manages users, courses, and classes.
+
+Table 2.2. Actor Permission Matrix
+The current implementation follows a role-based access control approach. The frontend uses role-based routes, while the backend uses dependency functions such as require_admin, require_teacher, and explicit role checks in the chatbot endpoint.
+2.4. Functional Requirements
+2.4.1. Auth Module
+Requirement ID
+Function
+Actor
+Description
+FR-01
+Login
+Admin/Teacher/Student
+The user enters email and password to log in through /api/auth/login.
+FR-02
+Role-based redirection
+System
+After login, the system redirects Admin to /admin, Teacher to /teacher, and Student to /student.
+FR-03
+Store login state
+System
+The frontend stores the access token and user information in localStorage.
+FR-04
+Logout
+Admin/Teacher/Student
+The user logs out, and the frontend removes token and user data from localStorage.
+FR-05
+Frontend role guard
+System
+The frontend prevents users from accessing pages that do not match their role.
+FR-06
+Backend role guard
+System
+The backend checks user role before allowing access to protected APIs.
+FR-07
+Get current user
+Admin/Teacher/Student
+The system provides /api/auth/me to get the current authenticated user.
+FR-08
+Register user
+Admin/System
+The system provides /api/auth/register to create a new user account.
+
+Table 2.3. Functional Requirements - Auth Module
+2.4.2. Academic Management Module
+Requirement ID
+Function
+Actor
+Description
+FR-A01
+View courses
+Admin/Teacher/Student
+Users can view course list from /api/courses.
+FR-A02
+Create course
+Admin
+Admin can create a new course.
+FR-A03
+View classes by role
+Admin/Teacher/Student
+Admin sees all classes, Teacher sees assigned classes, and Student sees enrolled classes.
+FR-A04
+Create class
+Admin
+Admin can create a new class and assign a teacher.
+FR-A05
+Enroll student
+Admin/Teacher
+Admin or Teacher can enroll a student into a class.
+FR-A06
+View students in class
+Admin/Teacher
+Users with proper permission can view students in a class.
+FR-A07
+View schedules
+Admin/Teacher/Student
+Users can view schedules of a selected class.
+FR-A08
+Create schedule
+Admin/Teacher
+Admin or Teacher can create a schedule for a class.
+FR-A09
+View lessons
+Admin/Teacher/Student
+Users can view lessons by course.
+FR-A10
+Create lesson through API
+Admin/Teacher
+Backend supports lesson creation through API.
+FR-A11
+Import PDF into lessons
+System/Technical Admin
+The ingest script can read PDF content and store it in the lessons table.
+
+Table 2.4. Functional Requirements - Academic Management Module
+2.4.3. Chatbot Module
+Requirement ID
+Function
+Actor
+Description
+FR-C01
+Send question
+Student
+Student submits a Data Science question to the chatbot.
+FR-C02
+Create or retrieve chat session
+System
+The system creates a new session if no session_id is provided, or retrieves an existing session.
+FR-C03
+Validate session ownership
+System
+The system checks that the session belongs to the current student.
+FR-C04
+Detect question topic
+System
+The system detects topic using keyword rules such as pandas, python, visualization, linear-regression, and classification.
+FR-C05
+Retrieve related lessons
+System
+The system finds related lessons using keyword-based retrieval.
+FR-C06
+Generate answer
+System
+The system calls the LLM provider to generate an answer.
+FR-C07
+Save student message
+System
+The student question is saved into chat_messages with sender = student.
+FR-C08
+Save bot message
+System
+The bot response is saved into chat_messages with sender = bot.
+FR-C09
+Return related lessons
+System
+The system returns lesson_refs including lesson id, title, and score.
+FR-C10
+Display answer
+Student
+The frontend displays the chatbot answer.
+FR-C11
+View chat sessions
+Student
+Student can view previous chat sessions.
+FR-C12
+View chat messages
+Student
+Student can view messages inside a selected chat session.
+
+Table 2.5. Functional Requirements - Chatbot Module
+2.4.4. Analytics and Alert Module
+Requirement ID
+Function
+Actor
+Description
+FR-D01
+View personal analytics
+Student
+Student can view personal analytics in the student dashboard through /api/analytics/me.
+FR-D02
+View class analytics
+Teacher/Admin
+Teacher/Admin can view analytics of a class through /api/analytics/class/{class_id}.
+FR-D03
+Recompute analytics
+Admin
+Admin can run /api/analytics/recompute.
+FR-D04
+Count repeated questions by topic
+System
+The system groups student messages by student_id and topic_id in the recent 7-day period.
+FR-D05
+Calculate repeat_score
+System
+The system calculates repeat_score = min(1.0, n / 5.0).
+FR-D06
+Save learning analytics
+System
+The system inserts or updates data in learning_analytics.
+FR-D07
+Generate repeated-question alert
+System
+If a student asks the same topic at least 3 times, the system generates a repeat_question alert.
+FR-D08
+Assign alert severity
+System
+If n is 3-4, severity is medium; if n is 5 or more, severity is high.
+FR-D09
+View AI alerts
+Teacher
+Teacher can view alerts from /api/alerts.
+FR-D10
+Mark alert as read
+Teacher
+Teacher can mark an alert as read using /api/alerts/{alert_id}/read.
+
+Table 2.6. Functional Requirements - Analytics and Alert Module
+2.4.5. Admin Module
+Requirement ID
+Function
+Actor
+Description
+FR-AD01
+View total users
+Admin
+Admin dashboard shows total users.
+FR-AD02
+View users by role
+Admin
+Admin dashboard shows number of admins, teachers, and students.
+FR-AD03
+View total courses
+Admin
+Admin dashboard shows total courses.
+FR-AD04
+View total classes
+Admin
+Admin dashboard shows total classes.
+FR-AD05
+View total lessons
+Admin
+Admin dashboard shows total lessons.
+FR-AD06
+View total enrollments
+Admin
+Admin dashboard shows total class enrollments.
+FR-AD07
+View chat statistics
+Admin
+Admin dashboard shows total chat sessions and chat messages.
+FR-AD08
+View alert statistics
+Admin
+Admin dashboard shows total alerts and unread alerts.
+FR-AD09
+Manage teachers
+Admin
+Admin can view, create, deactivate/activate, and delete teacher accounts.
+FR-AD10
+Manage students
+Admin
+Admin can view, create, deactivate/activate, and delete student accounts.
+FR-AD11
+Manage courses
+Admin
+Admin can create and view courses.
+FR-AD12
+Manage classes
+Admin
+Admin can create and view classes.
+
+Table 2.7. Functional Requirements - Admin Module
+2.5. Non-functional Requirements
+Category
+Requirement
+Description
+Usability
+Clear role-based interface
+The interface is separated into Admin, Teacher, and Student portals.
+Security
+Password hashing
+User passwords are stored as bcrypt hashes.
+Security
+JWT authentication
+The backend uses access tokens for authenticated requests.
+Security
+Role-based access control
+APIs are protected by role guards such as admin-only and teacher/admin endpoints.
+Security
+Student-only chatbot
+Admin and Teacher are not allowed to use /api/chat/ask.
+Maintainability
+Modular backend
+Backend code is organized into routers and services.
+Maintainability
+Modular frontend
+Frontend code is organized by layouts and pages for each role.
+Explainability
+Explainable retrieval score
+Lesson retrieval uses a simple scoring rule: title match has higher weight than content match.
+Explainability
+Explainable repeat score
+Repeat score is based on the number of repeated questions about the same topic.
+Robustness
+Empty question handling
+The request schema requires a question with minimum length 1.
+Robustness
+Invalid session handling
+The backend checks whether a session exists and belongs to the current student.
+Robustness
+No lesson handling
+If no related lesson is found, the chatbot can still generate an answer without lesson context.
+Data Consistency
+Dashboard from DB/API
+Admin dashboard values are counted from database tables through API.
+Scalability
+Replace keyword retrieval
+Keyword retrieval can be replaced by embedding/vector search in the future.
+Scalability
+Replace mock LLM
+Mock provider can be replaced by Gemini, OpenAI, or Ollama.
+Reproducibility
+Seed data
+The system can be demonstrated with seed data and demo accounts.
+
+Table 2.8. Non-functional Requirements
+2.6. Sitemap Matching the Current Code
+The sitemap below only includes routes that exist in the current frontend code. Pages that are not implemented, such as a separate Admin Lessons page, Teacher Analytics page, or Student Learning Analytics page, are not listed as independent pages.
+
+Figure 2.1. Sitemap of DS Chatbot System
+2.7. Use Case Diagram
+ 
+Figure 2.2. Use Case Diagram of DS Chatbot System [1] 
+2.7.1. Main Actors
+The main actors of the system are:
+Actor
+Description
+Admin
+Manages users, courses, classes, and views system statistics.
+Teacher
+Views assigned classes, schedules, class analytics, and AI alerts.
+Student
+Asks the chatbot, views schedules, analytics, and chat history.
+Retrieval Service
+Retrieves related lessons from the lessons table.
+LLM Service
+Generates answers based on the question and lesson context.
+Analytics Engine
+Recomputes learning analytics from chat data.
+Alert Engine
+Generates teacher alerts based on repeated-question rules.
+Database
+Stores all system data.
+
+Table 2.9. Use Case Summary
+2.7.2. Main Use Cases
+Use Case ID
+Use Case Name
+Main Actor
+UC-01
+Login
+Admin/Teacher/Student
+UC-02
+View Admin Dashboard
+Admin
+UC-03
+Manage Users
+Admin
+UC-04
+Manage Courses and Classes
+Admin
+UC-05
+View Assigned Classes
+Teacher
+UC-06
+View Class Analytics
+Teacher
+UC-07
+View AI Alerts
+Teacher
+UC-08
+Ask Chatbot
+Student
+UC-09
+Retrieve Related Lessons
+Retrieval Service
+UC-10
+Generate Answer
+LLM Service
+UC-11
+Save Chat History
+System/Database
+UC-12
+View Chat History
+Student
+UC-13
+Recompute Analytics
+Admin/Analytics Engine
+UC-14
+Generate Repeated-question Alert
+Alert Engine
+
+Table 2.10. Main Use cases
+2.8. Detailed Use Case Specifications
+This section summarizes the main use cases of the DS Chatbot System. The selected use cases represent the most important flows of the system, including authentication, chatbot interaction, retrieval, chat history storage, analytics recomputation, teacher decision support, and admin statistics. Each use case is linked to the related APIs and database tables to ensure that the requirement analysis is consistent with the current implementation.
+UC ID
+Use Case
+Main Actor
+Goal
+Related APIs
+Related Tables
+UC-01
+Login
+Admin, Teacher, Student
+Allow users to log in and access the correct portal based on role.
+POST /api/auth/login, GET /api/auth/me
+users
+UC-02
+Student Asks Chatbot
+Student
+Allow students to ask Data Science questions and receive chatbot answers.
+POST /api/chat/ask
+chat_sessions, chat_messages, question_topics, lessons, users
+UC-03
+Retrieval Finds Related Lessons
+Retrieval Service
+Find lessons related to the student’s question.
+Internal call inside /api/chat/ask
+lessons
+UC-04
+Chat History Is Saved
+Student, System, Database
+Store chatbot conversations so students can review them later.
+POST /api/chat/ask, GET /api/chat/sessions, GET /api/chat/sessions/{session_id}/messages
+chat_sessions, chat_messages
+UC-05
+Analytics Engine Computes Repeat Score
+Admin, Analytics Engine
+Recompute learning analytics and detect repeated questions by topic.
+POST /api/analytics/recompute
+chat_sessions, chat_messages, class_students, classes, question_topics, learning_analytics, teacher_alerts
+UC-06
+Teacher Views Decision Dashboard
+Teacher
+Allow teachers to view assigned classes, analytics, and AI alerts.
+GET /api/classes, GET /api/analytics/class/{class_id}, GET /api/alerts
+classes, class_students, users, schedules, learning_analytics, teacher_alerts
+UC-07
+Admin Views System Statistics
+Admin
+Allow admin to view overall system statistics.
+GET /api/admin/stats
+users, courses, classes, class_students, lessons, chat_sessions, chat_messages, teacher_alerts
+
+Table 2.11. Detailed Use Case Specifications
+2.9. Main API List
+Module
+Method
+Endpoint
+Main Permission
+Description
+Auth
+POST
+/api/auth/login
+All
+User login
+Auth
+POST
+/api/auth/register
+Admin/System
+Create user
+Auth
+GET
+/api/auth/me
+Logged-in user
+Get current user
+Users
+GET
+/api/users
+Logged-in user
+List users according to role
+Users
+DELETE
+/api/users/{user_id}
+Admin
+Delete user
+Users
+PATCH
+/api/users/{user_id}/active
+Admin
+Activate/deactivate user
+Courses
+GET
+/api/courses
+Current implementation allows access
+List courses
+Courses
+POST
+/api/courses
+Admin
+Create course
+Classes
+GET
+/api/classes
+Logged-in user
+List classes according to role
+Classes
+POST
+/api/classes
+Admin
+Create class
+Classes
+POST
+/api/classes/enroll
+Admin/Teacher
+Enroll student
+Classes
+GET
+/api/classes/{class_id}/students
+Logged-in user with permission
+List students in class
+Schedules
+GET
+/api/schedules
+Logged-in user
+List schedules by class
+Schedules
+POST
+/api/schedules
+Admin/Teacher
+Create schedule
+Lessons
+GET
+/api/lessons
+Current implementation allows access
+List lessons by course
+Lessons
+POST
+/api/lessons
+Admin/Teacher
+Create lesson
+Chat
+POST
+/api/chat/ask
+Student
+Ask chatbot
+Chat
+GET
+/api/chat/sessions
+Logged-in user
+List chat sessions of current user
+Chat
+GET
+/api/chat/sessions/{session_id}/messages
+Logged-in user
+List messages in a session
+Analytics
+GET
+/api/analytics/me
+Logged-in user
+View personal analytics
+Analytics
+GET
+/api/analytics/class/{class_id}
+Admin/Teacher
+View class analytics
+Analytics
+POST
+/api/analytics/recompute
+Admin
+Recompute analytics and generate alerts
+Alerts
+GET
+/api/alerts
+Admin/Teacher
+View teacher alerts
+Alerts
+PATCH
+/api/alerts/{alert_id}/read
+Admin/Teacher
+Mark alert as read
+Admin
+GET
+/api/admin/stats
+Admin
+View system statistics
+Health
+GET
+/api/health
+Public
+Check backend status
+
+Table 2.12. Main API List
+Overall, the requirements in this chapter are mapped directly from the original problem statement. The system covers account management, class management, Data Science course and lesson management, schedule management, AI chatbot interaction, chat history storage, repeated-question analysis, teacher notification, and student learning-frequency tracking. The only major difference from the initial conceptual flow is that the current prototype uses keyword-based lesson retrieval instead of a deployed vector database; the vector database and embedding-based search are kept as future extensions.
+2.10. Chapter Summary
+This chapter analyzed the system requirements of the AI Chatbot System for Data Science learning. The system has three main human actors: Admin, Teacher, and Student. Admin manages system data and views overall statistics. The teacher monitors assigned classes, views class analytics, and receives AI alerts. Students use the chatbot, view related lessons, and review chat history. The functional requirements were divided into Auth, Academic Management, Chatbot, Analytics and Alert, and Admin modules. The non-functional requirements focus on usability, security, explainability, robustness, maintainability, data consistency, and scalability. The sitemap, permission matrix, use cases, and API list were written to match the current implementation. Features that are not fully implemented in the current code, such as a complete SAW/MCDM Engagement Score, topic diversity, engagement ranking, and a separate lesson management page, are not presented as completed system functions in this chapter.
+
+ 
+CHAPTER 3. SYSTEM DESIGN
+3.1. System Architecture
+The DS Chatbot System is designed as a full-stack web application with a frontend-backend-database architecture. The system separates the user interface, business logic, service modules, and data storage into different layers to improve maintainability and scalability.
+The system consists of four main layers:
+User Layer
+Frontend Layer
+Backend Layer
+Data Layer
+The User Layer includes three human actors: Admin, Teacher, and Student. Each actor accesses a different role-based portal. Admin uses the system to manage users, courses, and classes, and to view overall statistics. Teacher uses the system to view assigned classes, schedules, learning analytics, and AI alerts. Student uses the system to view enrolled classes, schedules, ask the chatbot, and review chat history.
+The Frontend Layer is implemented using React, Vite, TypeScript, and Tailwind CSS. It includes role-based layouts, pages, authentication context, route guards, and an API client. The frontend sends HTTP requests to the backend and displays the returned data to the user.
+The Backend Layer is implemented using FastAPI. It contains routers for authentication, users, academic management, chatbot, analytics, and admin statistics. The backend also contains service modules for retrieval and LLM provider integration. It is responsible for authentication, authorization, business logic, chatbot processing, analytics recomputation, and alert generation.
+The Data Layer uses MySQL as the relational database and SQLAlchemy as the ORM. The database stores users, courses, classes, schedules, lessons, chat sessions, chat messages, learning analytics, and teacher alerts.
+
+Figure 3.1. System Architecture of DS Chatbot System
+This architecture is suitable for a prototype Decision Support System because each layer has a clear responsibility. The frontend focuses on user interaction, the backend handles processing and decision-support logic, and the database stores learning and system data.
+3.2. Component Diagram
+The component design shows how the main modules of the system interact with each other. The system is divided into frontend components, backend components, service components, and the database.
+
+Figure 3.2. Component Diagram of DS Chatbot System
+3.2.1. Frontend Components
+The frontend contains the following main components:
+Component
+Description
+LoginPage
+Provides the login interface for all users.
+AuthContext
+Stores authentication state, user information, and login/logout functions.
+RoleGate
+Protects pages based on user role.
+API Client
+Sends HTTP requests to the backend and attaches JWT token to requests.
+AdminLayout
+Provides navigation and layout for admin pages.
+TeacherLayout
+Provides navigation and layout for teacher pages.
+StudentLayout
+Provides navigation and layout for student pages.
+Admin Pages
+Include dashboard, teachers, students, courses, and classes pages.
+Teacher Pages
+Include my classes, class detail, schedules, and AI alerts pages.
+Student Pages
+Include dashboard, chatbot, schedules, and chat history pages.
+
+Table 3.1.
+3.2.2. Backend Components
+The backend contains the following main routers and services:
+Component
+Description
+Auth Router
+Handles login, registration, and current user information.
+Users Router
+Handles user listing, activation/deactivation, and deletion.
+Academic Router
+Handles courses, classes, enrollments, schedules, and lessons.
+Chat Router
+Handles chatbot asking, chat sessions, and chat messages.
+Analytics Router
+Handles learning analytics, recomputation, and alerts.
+Admin Router
+Handles admin dashboard statistics.
+Retrieval Service
+Finds related lessons using keyword-based scoring.
+LLM Service
+Generates chatbot answers using Mock, Gemini, OpenAI, or Ollama provider.
+Database Module
+Provides database connection and session management.
+Security Module
+Provides password hashing, JWT creation, and JWT decoding.
+
+Table 3.2.
+3.2.3. Component Interaction
+When a student asks a question, the Student Chat page sends the question to the Chat Router. The Chat Router calls the Retrieval Service to find related lessons, then calls the LLM Service to generate an answer. After that, both the student message and the bot response are stored in the database.
+When the admin runs analytics recomputation, the Analytics Router reads chat data from the database, groups student messages by topic, computes repeat score, updates learning analytics, and generates teacher alerts when needed.
+3.3. Data Flow Diagram
+The Data Flow Diagram describes how data moves between users, system processes, and data stores.
+3.3.1. DFD Level 0
+At Level 0, the system is represented as a single process. Admin, Teacher, and Student interact with the DS Chatbot System. The system reads and writes data to the MySQL database.
+
+Figure 3.3. DFD Level 0 of DS Chatbot System[2] 
+The Level 0 data flow can be described as follows:
+Admin / Teacher / Student
+        ↓
+DS Chatbot System
+        ↓
+MySQL Database
+ 
+The Student sends questions to the system and receives chatbot answers. The Teacher receives class analytics and AI alerts. The Admin receives system statistics and manages system data.
+3.3.2. DFD Level 1
+At Level 1, the system is decomposed into several main processes.
+
+Figure 3.4. DFD Level 1 of DS Chatbot System
+The main processes are:
+Process
+Name
+Description
+P1
+Authentication
+Handles login, token generation, and user validation.
+P2
+Academic Data Management
+Handles courses, classes, students, schedules, and lessons.
+P3
+Chatbot Processing
+Handles student questions and chatbot responses.
+P4
+Retrieval Processing
+Retrieves related lessons based on the question.
+P5
+Chat History Storage
+Stores chat sessions and chat messages.
+P6
+Analytics Recompute
+Computes learning analytics from chat data.
+P7
+Alert Generation
+Generates teacher alerts based on repeated-question rules.
+P8
+Dashboard Reporting
+Provides statistics and analytics data to dashboards.
+
+The main data stores are:
+Data Store
+Name
+Related Tables
+D1
+User Data
+users
+D2
+Academic Data
+courses, classes, class_students, schedules
+D3
+Lesson Data
+lessons
+D4
+Chat Data
+chat_sessions, chat_messages
+D5
+Analytics Data
+learning_analytics
+D6
+Alert Data
+teacher_alerts
+
+The data flow starts when users interact with the frontend. The frontend sends API requests to the backend. The backend processes the requests, reads or writes data to the database, and returns responses to the frontend.
+3.4. Sequence Diagram Design
+This section presents the main sequence diagrams of the system. These diagrams describe the interaction order between frontend pages, backend routers, services, and the database.
+3.4.1. Login Sequence
+The login sequence describes how a user logs into the system and is redirected based on role.
+
+Figure 3.5. Login Sequence Diagram
+The login process is as follows:
+The user opens the login page.
+The user enters email and password.
+The frontend sends a login request to POST /api/auth/login.
+The backend checks whether the email exists.
+The backend verifies the password using bcrypt.
+The backend checks whether the account is active.
+The backend creates a JWT access token.
+The backend returns the token and user information.
+The frontend stores the token and user data in localStorage.
+The frontend redirects the user based on role:
+○  	Admin to /admin
+○  	Teacher to /teacher
+○  	Student to /student
+If the email or password is incorrect, the backend returns an authentication error. If the account is inactive, the backend rejects the login request.
+3.4.2. Student Ask Chatbot Sequence
+The chatbot sequence is one of the most important flows of the system. It shows how a student question is processed and transformed into a chatbot response.
+
+Figure 3.6. Student Ask Chatbot Sequence Diagram
+The process is as follows:
+The student opens the AI Assistant page at /student/chat.
+The student enters a Data Science question.
+The frontend sends the request to POST /api/chat/ask.
+The backend checks that the current user role is student.
+If no session_id is provided, the backend creates a new chat session.
+If a session_id is provided, the backend verifies that the session belongs to the current student.
+The backend detects the topic of the question using keyword rules.
+The backend calls the Retrieval Service to search for related lessons.
+The Retrieval Service tokenizes the question, removes stopwords, searches candidate lessons, computes scores, and returns the top related lessons.
+The backend saves the student message into chat_messages.
+The backend calls the LLM Service with the question and retrieved lesson contexts.
+The LLM Service returns the chatbot answer.
+The backend saves the bot message into chat_messages.
+The backend returns the answer, topic, related lessons, and response time to the frontend.
+The frontend displays the chatbot answer and related lesson references.
+This sequence demonstrates how the system combines chatbot interaction, retrieval, and data storage in one learning support flow.
+3.4.3. Analytics Recompute and Alert Sequence
+The analytics recompute sequence describes how the system uses chat data to generate decision-support signals for teachers.
+
+Figure 3.7. Analytics Recompute and Alert Sequence Diagram
+The process is as follows:
+Admin calls POST /api/analytics/recompute.
+The backend checks that the current user is admin.
+The system retrieves student messages from the recent 7-day period.
+The system groups messages by student_id and topic_id.
+The system counts how many times each student asked about each topic.
+If the count is lower than 3, the system skips alert generation.
+If the count is 3 or higher, the system finds the student’s class.
+The system finds the teacher assigned to that class.
+The system calculates repeat score using the formula: repeat_score = min(1.0, n / 5.0)
+The system inserts or updates the corresponding row in learning_analytics.
+The system creates a teacher alert with alert type repeat_question.
+The alert severity is set as:
+○  	medium if the count is from 3 to 4
+○  	high if the count is 5 or more
+The teacher can later view the alert on the AI Alerts page.
+This sequence shows the decision-support mechanism of the system. The system does not predict final grades. Instead, it provides early signals based on repeated learning questions.
+3.5. Database Design
+The database is designed as a relational database using MySQL. SQLAlchemy ORM is used in the backend to map Python models to database tables. The current schema contains 11 main tables.
+
+Figure 3.8. Entity Relationship Diagram of DS Chatbot System
+3.5.1. List of Tables
+No.
+Table
+Purpose
+1
+users
+Stores admin, teacher, and student accounts.
+2
+courses
+Stores Data Science courses.
+3
+classes
+Stores class information and assigned teacher.
+4
+class_students
+Stores student enrollment in classes.
+5
+schedules
+Stores class schedules.
+6
+lessons
+Stores learning content used by the chatbot.
+7
+question_topics
+Stores predefined question topics.
+8
+chat_sessions
+Stores student chat sessions.
+9
+chat_messages
+Stores student and bot messages.
+10
+learning_analytics
+Stores daily learning analytics records.
+11
+teacher_alerts
+Stores alerts generated for teachers.
+
+3.5.2. Main Relationships
+The main relationships in the database are:
+●  	One user can reference another user through parent_id.
+●  	One admin user can create many courses through courses.created_by.
+●  	One course can have many classes.
+●  	One teacher can be assigned to many classes.
+●  	One class can have many students through the class_students table.
+●  	One class can have many schedules.
+●  	One course can have many lessons.
+●  	One student can have many chat sessions.
+●  	One chat session can have many chat messages.
+●  	One chat message may be linked to one question topic.
+●  	One chat message may be linked to one related lesson.
+●  	One student can have many learning analytics records.
+●  	One teacher can receive many teacher alerts.
+●  	A teacher alert may be linked to a class, student, and question topic.
+3.5.3. Table Description
+users
+The users table stores all accounts in the system. It includes Admin, Teacher, and Student users. The role field defines the permission group of each user. The password_hash field stores the hashed password, and is_active is used to control whether the account can log in.
+Important fields:
+Field
+Description
+id
+Primary key of the user.
+full_name
+Full name of the user.
+email
+Unique email used for login.
+password_hash
+Hashed password.
+role
+User role: admin, teacher, or student.
+parent_id
+Self-reference to another user.
+is_active
+Account status.
+last_login_at
+Last login time.
+
+courses
+The courses table stores course information. In this system, the main course domain is Data Science. Each course is created by an admin user.
+Important fields:
+Field
+Description
+id
+Primary key of the course.
+code
+Unique course code.
+name
+Course name.
+description
+Course description.
+created_by
+Admin user who created the course.
+
+classes
+The classes table stores class information. Each class belongs to one course and is assigned to one teacher.
+Important fields:
+Field
+Description
+id
+Primary key of the class.
+course_id
+Foreign key to courses.
+teacher_id
+Foreign key to users, representing the teacher.
+name
+Class name.
+semester
+Semester information.
+start_date
+Class start date.
+end_date
+Class end date.
+is_active
+Class status.
+
+class_students
+The class_students table represents the many-to-many relationship between classes and students. A class can have many students, and a student can enroll in many classes.
+Important fields:
+Field
+Description
+id
+Primary key.
+class_id
+Foreign key to classes.
+student_id
+Foreign key to users.
+joined_at
+Enrollment time.
+status
+Enrollment status: active, dropped, or completed.
+
+The table has a unique constraint on (class_id, student_id) to prevent duplicate enrollment.
+schedules
+The schedules table stores class schedules. Each schedule belongs to one class.
+Important fields:
+Field
+Description
+id
+Primary key.
+class_id
+Foreign key to classes.
+title
+Schedule title.
+start_time
+Start time of the lesson.
+end_time
+End time of the lesson.
+room
+Classroom or meeting room.
+note
+Additional notes.
+
+lessons
+The lessons table stores learning materials. The chatbot retrieval module uses this table to find related lessons for student questions.
+Important fields:
+Field
+Description
+id
+Primary key.
+course_id
+Foreign key to courses.
+title
+Lesson title.
+content
+Lesson content.
+file_url
+Optional source file URL.
+order_index
+Lesson ordering index.
+embedding_id
+Optional reference for future vector database integration.
+
+Although the current version uses keyword retrieval, the embedding_id field allows the system to be extended with vector-based retrieval in the future.
+question_topics
+The question_topics table stores predefined topics that can be attached to chat messages. The current topic detection mechanism uses keyword heuristics.
+Important fields:
+Field
+Description
+id
+Primary key.
+name
+Topic name.
+slug
+Unique topic slug.
+description
+Topic description.
+
+Example topics include pandas, python, visualization, linear regression, and classification.
+chat_sessions
+The chat_sessions table stores chatbot sessions created by students. A session contains multiple chat messages.
+Important fields:
+Field
+Description
+id
+Primary key.
+student_id
+Foreign key to users, representing the student.
+course_id
+Optional foreign key to courses.
+title
+Session title, usually generated from the first question.
+started_at
+Start time of the session.
+ended_at
+Optional end time of the session.
+message_count
+Number of messages in the session.
+
+chat_messages
+The chat_messages table stores each student question and bot answer. The sender field can be student or bot.
+Important fields:
+Field
+Description
+id
+Primary key.
+session_id
+Foreign key to chat_sessions.
+sender
+Message sender: student or bot.
+content
+Message content.
+topic_id
+Optional foreign key to question_topics.
+lesson_id
+Optional foreign key to lessons.
+tokens_used
+Optional number of tokens used.
+response_time_ms
+Response time in milliseconds.
+created_at
+Message creation time.
+
+This table is important because it stores the behavioral trace data used for learning analytics.
+learning_analytics
+The learning_analytics table stores daily analytics records for students. It supports teacher monitoring and decision support.
+Important fields:
+Field
+Description
+id
+Primary key.
+student_id
+Foreign key to users.
+class_id
+Foreign key to classes.
+date
+Analytics date.
+session_count
+Number of sessions.
+question_count
+Number of questions.
+total_time_sec
+Total learning time in seconds.
+top_topic_id
+Topic most frequently asked.
+repeat_score
+Score representing repeated questions.
+
+The current recompute logic mainly updates question_count, top_topic_id, and repeat_score based on repeated questions in the recent 7-day period.
+teacher_alerts
+The teacher_alerts table stores alerts generated for teachers. In the current implementation, the main alert type generated by the analytics recomputation is repeat_question.
+Important fields:
+Field
+Description
+id
+Primary key.
+teacher_id
+Foreign key to users, representing the teacher.
+class_id
+Related class.
+student_id
+Related student.
+topic_id
+Related question topic.
+alert_type
+Alert type.
+message
+Alert message.
+severity
+Alert severity: low, medium, or high.
+is_read
+Whether the alert has been read.
+created_at
+Alert creation time.
+read_at
+Time when the alert was marked as read.
+
+ 
+3.6. API Design
+The backend exposes RESTful APIs under the /api prefix. These APIs are consumed by the React frontend through the Axios API client.
+3.6.1. Authentication APIs
+Method
+Endpoint
+Permission
+Description
+POST
+/api/auth/login
+Public
+Login and return access token.
+POST
+/api/auth/register
+Admin/System
+Create a new user account.
+GET
+/api/auth/me
+Logged-in user
+Return current user information.
+
+3.6.2. User Management APIs
+Method
+Endpoint
+Permission
+Description
+GET
+/api/users
+Logged-in user
+Return users according to current role.
+PATCH
+/api/users/{user_id}/active
+Admin
+Activate or deactivate a user.
+DELETE
+/api/users/{user_id}
+Admin
+Delete a user.
+
+3.6.3. Academic APIs
+Method
+Endpoint
+Permission
+Description
+GET
+/api/courses
+Current implementation allows access
+List courses.
+POST
+/api/courses
+Admin
+Create a course.
+GET
+/api/classes
+Logged-in user
+List classes according to role.
+POST
+/api/classes
+Admin
+Create a class.
+POST
+/api/classes/enroll
+Admin/Teacher
+Enroll a student into a class.
+GET
+/api/classes/{class_id}/students
+Logged-in user with permission
+List students in a class.
+GET
+/api/schedules
+Logged-in user
+List schedules by class.
+POST
+/api/schedules
+Admin/Teacher
+Create a schedule.
+GET
+/api/lessons
+Current implementation allows access
+List lessons by course.
+POST
+/api/lessons
+Admin/Teacher
+Create a lesson.
+
+3.6.4. Chatbot APIs
+Method
+Endpoint
+Permission
+Description
+POST
+/api/chat/ask
+Student
+Ask chatbot and receive answer.
+GET
+/api/chat/sessions
+Logged-in user
+List current user’s chat sessions.
+GET
+/api/chat/sessions/{session_id}/messages
+Logged-in user
+List messages in a chat session.
+
+The chatbot asking endpoint is student-only. If an Admin or Teacher calls this endpoint, the backend returns a forbidden error.
+3.6.5. Analytics and Alert APIs
+Method
+Endpoint
+Permission
+Description
+GET
+/api/analytics/me
+Logged-in user
+Return personal analytics.
+GET
+/api/analytics/class/{class_id}
+Admin/Teacher
+Return analytics of a class.
+POST
+/api/analytics/recompute
+Admin
+Recompute analytics and generate alerts.
+GET
+/api/alerts
+Admin/Teacher
+List teacher alerts.
+PATCH
+/api/alerts/{alert_id}/read
+Admin/Teacher
+Mark an alert as read.
+
+3.6.6. Admin and Health APIs
+Method
+Endpoint
+Permission
+Description
+GET
+/api/admin/stats
+Admin
+Return system statistics for admin dashboard.
+GET
+/api/health
+Public
+Check backend status.
+
+3.7. UI Design
+The frontend interface is designed according to user roles. Each role has a separate layout and navigation menu to reduce confusion and prevent users from seeing unrelated functions.
+Figure 3.9. Role-based UI Structure [3] 
+3.7.1. Login Page
+The Login Page is used by all roles. Users enter their email and password. After successful login, the system redirects them based on their role.
+Figure 3.10. Login Page Design[4] 
+Main elements:
+●  	Email input.
+●  	Password input.
+●  	Login button.
+●  	Error message area.
+3.7.2. Admin Interface
+The Admin Interface includes pages for system statistics and data management.
+Figure 3.11. Admin Dashboard Design [5] 
+Admin pages:
+Page
+Route
+Purpose
+Admin Dashboard
+/admin
+Show system statistics.
+Teachers
+/admin/teachers
+Manage teacher accounts.
+Students
+/admin/students
+Manage student accounts.
+Courses
+/admin/courses
+Manage courses.
+Classes
+/admin/classes
+Manage classes.
+
+The Admin Dashboard displays counters such as total users, teachers, students, courses, classes, lessons, enrollments, chat sessions, chat messages, and alerts.
+3.7.3. Teacher Interface
+The Teacher Interface focuses on assigned classes, schedules, analytics, and alerts.
+Figure 3.12. Teacher Dashboard Design [6] 
+Teacher pages:
+Page
+Route
+Purpose
+My Classes
+/teacher
+Show classes assigned to the teacher.
+Class Detail
+/teacher/classes/:classId
+Show students, schedules, and analytics of a class.
+Schedule
+/teacher/schedules
+Show and create class schedules.
+AI Alerts
+/teacher/alerts
+Show teacher alerts generated by the system.
+
+Figure 3.13. Teacher Class Detail Design [7] 
+The Class Detail page contains multiple sections, including student list, schedule section, and learning analytics section. The analytics section is not a separate route in the current code; it is part of the class detail page.
+Figure 3.14. Teacher AI Alerts Design [8] 
+The AI Alerts page helps teachers identify students who repeatedly ask about the same topic. Teachers can mark alerts as read after reviewing them.
+3.7.4. Student Interface
+The Student Interface focuses on learning support, chatbot interaction, schedule viewing, and chat history.
+Figure 3.15. Student Dashboard Design [9] 
+Student pages:
+Page
+Route
+Purpose
+Student Dashboard
+/student
+Show enrolled classes and personal analytics section.
+AI Assistant
+/student/chat
+Allow students to ask the chatbot.
+Schedule
+/student/schedules
+Show schedules of enrolled classes.
+Chat History
+/student/history
+Show previous chat sessions and messages.
+
+Figure 3.16. Student AI Assistant Design [10] 
+The AI Assistant page is the main interaction point for students. Students can submit a question, receive an answer, and view related lesson references returned by the retrieval module.
+Figure 3.17. Student Chat History Design [11] 
+The Chat History page allows students to review previous conversations. This supports self-review and helps students continue learning from earlier questions.
+3.8. Design Consistency with Current Implementation
+The design in this chapter is based on the current implementation of the DS Chatbot System. Therefore, several important design decisions are made to avoid describing features that are not fully implemented.
+First, the sitemap and UI design only include existing frontend routes. There is no separate Admin Lessons page in the current frontend, although the backend supports lesson creation through API and PDF ingest script.
+Second, Teacher Analytics is not designed as a separate page. It is presented as a section inside the Teacher Class Detail page.
+Third, Student Learning Analytics is not designed as a separate page. It is presented as a section inside the Student Dashboard.
+Fourth, the current analytics mechanism mainly focuses on repeated-question behavior. The system computes repeat score and generates repeat-question alerts. Features such as full SAW/MCDM Engagement Score, topic diversity, engagement ranking, top topics chart, and activity trend chart are not presented as completed functions in this chapter. They can be included in future development.
+Finally, the retrieval module uses keyword-based scoring instead of a real vector database. This design is suitable for a local prototype because it is simple, explainable, and directly connected to the content stored in the lessons table.
+3.9. Chapter Summary
+This chapter presented the design of the DS Chatbot System. The system follows a layered architecture consisting of the User Layer, Frontend Layer, Backend Layer, and Data Layer. The component design shows how frontend pages, backend routers, service modules, and the database interact with each other.
+The Data Flow Diagram describes how authentication, academic management, chatbot processing, retrieval, chat history storage, analytics recomputation, alert generation, and dashboard reporting are handled. The sequence diagrams explain the main flows of login, student chatbot interaction, and analytics recomputation.
+The database design includes 11 main tables: users, courses, classes, class_students, schedules, lessons, question_topics, chat_sessions, chat_messages, learning_analytics, and teacher_alerts. These tables support user management, class management, chatbot interaction, learning analytics, and teacher alerts.
+The API design lists the real endpoints implemented in the backend, and the UI design describes the role-based interfaces for Admin, Teacher, and Student. Overall, the system design supports the goal of building a Decision Support System prototype for Data Science learning.
+
+ 
+CHAPTER 4. DECISION SUPPORT MECHANISM
+4.1. Overview of the Decision Support Mechanism
+The DS Chatbot System is designed not only as a question-answering chatbot, but also as a Decision Support System prototype for teaching support. The main purpose of the system is to transform student chatbot interactions into simple learning signals that teachers can use for observation and intervention.
+In the current implementation, the decision support mechanism focuses on repeated-question behavior. When a student asks about the same topic many times within a recent period, the system considers this behavior as a possible sign that the student may be struggling with that topic. The system then computes learning analytics and generates alerts for the teacher.
+The main decision support flow is:
+Student asks a question
+-> The question is stored as chat data
+-> The system detects the question topic
+-> The system retrieves related lessons
+-> The chatbot generates an answer
+-> The analytics engine recomputes learning indicators
+-> The alert engine detects repeated-question behavior
+-> The teacher receives an AI alert
+-> The teacher decides whether to review the topic or support the student
+
+Figure 4.1. Decision Support Flow of DS Chatbot System
+This flow follows the logic of a Decision Support System. The database stores learning behavior data, the backend processes that data using simple rules and scoring mechanisms, and the user interface presents the results to teachers and admins. The system does not make final decisions automatically. Instead, it provides signals that support human decision-making.
+4.2. Decision Support Model in the System
+The decision support model of the system can be explained through three main dimensions: data, model, and interface.
+DSS Component
+Implementation in the System
+Description
+Data Management
+MySQL database
+Stores users, classes, lessons, chat messages, analytics records, and alerts.
+Model Management
+Retrieval scoring, topic detection, repeat score, alert rules
+Processes raw chat data into decision-support signals.
+User Interface
+Admin dashboard, Teacher class detail, Teacher AI alerts, Student dashboard
+Displays information to different actors according to their roles.
+
+In this system, the chatbot plays an important role as the interaction point where learning behavior data is generated. Every student question can become a data point for later analysis. The retrieval module connects the student’s question with related lessons, while the analytics and alert modules transform repeated-question behavior into teacher-facing alerts.
+The teacher remains the final decision-maker. The system only suggests that a student or topic may need attention. The teacher can then decide whether to:
+●  	Review the topic in the next class.
+●  	Contact the student directly.
+●  	Add more learning materials.
+●  	Give additional examples or exercises.
+●  	Monitor the student’s future activity.
+Therefore, the system should be understood as a decision-support prototype, not an automatic decision-making system.
+4.3. Chatbot Interaction as Learning Behavior Data
+In the system, chatbot interaction is the main source of learning behavior data. When a student asks a question, the system does not only return an answer. It also stores the question, the detected topic, the retrieved lesson reference, the bot response, and the response time.
+
+Figure 4.2. Chatbot Interaction Data Collection Flow
+The chatbot interaction data is stored mainly in two tables:
+Table
+Purpose
+chat_sessions
+Stores each chatbot session of a student.
+chat_messages
+Stores each student question and bot answer.
+
+Each student question is stored with the sender value student, while each chatbot answer is stored with the sender value bot. This separation allows the system to later analyze only student questions when computing repeated-question behavior.
+The stored chatbot data can answer questions such as:
+●  	Which student asked the question?
+●  	When was the question asked?
+●  	Which topic was detected?
+●  	Which lesson was related to the question?
+●  	How many times did the student ask about the same topic?
+●  	Which students may need teacher support?
+This is the first step of the decision support mechanism. Without storing chatbot interactions, the system would only be a simple chatbot and would not be able to support teacher decision-making.
+4.4. Topic Detection Mechanism
+The topic detection mechanism is used to assign a question topic to a student message. In the current implementation, the system uses a keyword-based heuristic approach. This means that the backend checks whether the student’s question contains specific keywords related to predefined Data Science topics.
+The detected topic can later be used for analytics and alert generation. For example, if a student repeatedly asks questions related to pandas, the system can detect that the student may be struggling with the pandas topic.
+
+Figure 4.3. Topic Detection Mechanism
+Example topic groups in the current system include:
+Topic
+Example Keywords
+pandas
+pandas, dataframe, groupby, missing values
+python
+python, list, function, loop
+visualization
+matplotlib, chart, plot, histogram
+linear regression
+regression, linear regression, prediction
+classification
+classification, confusion matrix, accuracy
+
+The topic detection process can be summarized as follows:
+Student question
+-> Normalize text
+-> Check keyword rules
+-> Match question with predefined topic
+-> Assign topic_id to chat message
+ 
+If the question does not match any keyword rule, the topic may be null. In that case, the message can still be stored and answered by the chatbot, but it may not be used for repeated-topic alert generation.
+The keyword-based method is simple and explainable. However, it has limitations. It may fail when a student uses different words to describe the same concept. For example, a question about “splitting training and testing data” may not be detected correctly if the keyword rule only checks for “train-test split”. This limitation can be improved in the future by using embedding-based topic detection or text classification.
+4.5. Related Lesson Retrieval Mechanism
+The retrieval mechanism is used to find learning materials related to the student’s question. In the current version, the system does not use a real vector database. Instead, it uses keyword-based scoring over the lessons table.
+The retrieval mechanism is designed to be simple, transparent, and explainable. This is suitable for a local prototype because the teacher and developer can understand why a lesson is selected.
+
+Figure 4.4. Keyword-based Lesson Retrieval Pipeline[12] 
+The retrieval pipeline is:
+Student question
+-> Tokenization
+-> Stopword removal
+-> Candidate lesson search
+-> Score calculation
+-> Ranking
+-> Return top 3 related lessons
+The scoring formula is:
+score = 3 × title_overlap + 1 × content_overlap
+Where:
+Term
+Meaning
+title_overlap
+Number of question tokens appearing in the lesson title.
+content_overlap
+Number of question tokens appearing in the lesson content.
+score
+Final retrieval score of a lesson.
+
+The title has a higher weight because a keyword appearing in the lesson title is usually more important than a keyword appearing only in the lesson content. For example, if the question is “What is pandas groupby used for?”, a lesson with the title “Data Aggregation with Pandas GroupBy” should be ranked higher than a lesson that only mentions “groupby” once in the content.
+The retrieval result is returned as lesson_refs, which may include:
+●  	Lesson ID.
+●  	Lesson title.
+●  	Retrieval score.
+These lesson references are displayed in the student chatbot interface so that the student can see which learning materials are related to the answer.
+4.6. Chatbot Answer Generation Mechanism
+After related lessons are retrieved, the backend calls the LLM Service to generate an answer. The LLM Service is designed as a provider layer, so the system can switch between different providers depending on configuration.
+Supported providers include:
+Provider
+Purpose
+Mock
+Used for functional testing and demo flow.
+Gemini
+Used when configured with Gemini API.
+OpenAI
+Used when configured with OpenAI API.
+Ollama
+Used for local LLM deployment.
+
+
+Figure 4.5. Chatbot Answer Generation Flow
+The answer generation flow is:
+Student question
+-> Related lessons are retrieved
+-> Backend prepares context
+-> LLM Service generates answer
+-> Backend stores bot response
+-> Frontend displays answer
+If the system uses the Mock provider, the generated answer is mainly used to test the functional flow. In that case, the report should not claim that the system has evaluated the real quality of an AI model. If a real provider such as Gemini, OpenAI, or Ollama is used, the report should clearly state the provider, model, test date, temperature, and number of test questions.
+In the current system, answer generation is connected with data storage. The chatbot response is not temporary. It is saved into the chat_messages table so that students can view the response again later in chat history.
+4.7. Chat History Storage Mechanism
+The chat history mechanism allows students to review previous chatbot conversations. This feature is important because students may need to revisit earlier explanations while studying.
+The system stores chat history in two levels:
+Level
+Table
+Description
+Session level
+chat_sessions
+Stores each chat session of a student.
+Message level
+chat_messages
+Stores each student's question and bot answers.
+
+
+Figure 4.6. Chat History Storage Mechanism
+When a student asks the first question, the system creates a new chat session if no existing session_id is provided. The session title is usually generated from the beginning of the student’s question. Then, the student message and bot message are stored in the chat_messages table.
+The system also checks session ownership. A student is only allowed to view their own chat sessions. If a student tries to access another student’s chat session, the backend rejects the request.
+The chat history mechanism supports decision support indirectly. Since chat data is stored, the analytics engine can later use student messages to detect repeated-topic behavior and generate teacher alerts.
+ 
+4.8. Learning Analytics Mechanism
+The learning analytics mechanism transforms stored chatbot data into simple learning indicators. In the current implementation, the main analytics focus is repeated-question behavior.
+The learning_analytics table stores records with fields such as:
+Field
+Meaning
+student_id
+The student being analyzed.
+class_id
+The related class.
+date
+The analytics date.
+session_count
+Number of sessions.
+question_count
+Number of questions in the analyzed group.
+total_time_sec
+Total learning time in seconds.
+top_topic_id
+Most frequent topic.
+repeat_score
+Score representing repeated questions.
+
+
+Figure 4.7. Learning Analytics Recompute Flow
+The analytics recomputation process focuses on recent chat messages. The system analyzes student messages from the recent 7-day period and groups them by student_id and topic_id.
+The main process is:
+Get student messages in recent 7 days
+-> Group by student_id and topic_id
+-> Count repeated questions
+-> Skip groups with no topic or count < 3
+-> Find student class and teacher
+-> Compute repeat_score
+-> Update learning_analytics
+-> Generate teacher alert if needed
+ 
+The repeat score formula is:
+repeat_score = min(1.0, n / 5.0)
+ 
+Where:
+Symbol
+Meaning
+n
+Number of times a student asked about the same topic in the recent analysis period.
+repeat_score
+Normalized repeated-question score from 0 to 1.
+
+Example:
+Number of repeated questions
+repeat_score
+1
+0.20
+2
+0.40
+3
+0.60
+4
+0.80
+5 or more
+1.00
+
+In the current implementation, the analytics mechanism should be understood as a simple behavioral indicator, not a complete measurement of student engagement. Some fields such as session_count and total_time_sec exist in the database, but they are not the main focus of the current recompute logic.
+4.9. Teacher Alert Mechanism
+The teacher alert mechanism is the main output of the current decision support process. It helps teachers identify repeated-question behavior and possible learning difficulties.
+The main alert rule in the current implementation is:
+If a student asks about the same topic at least 3 times within the recent 7-day period,
+the system generates a repeat_question alert for the teacher.
+
+Figure 4.8. Teacher Alert Generation Rule
+The severity rule is:
+Condition
+Alert Type
+Severity
+Meaning
+3 <= n < 5
+repeat_question
+medium
+The student may need attention.
+n >= 5
+repeat_question
+high
+The student is likely struggling with the topic.
+
+The generated alert is stored in the teacher_alerts table. Each alert may include:
+●  	Teacher ID.
+●  	Class ID.
+●  	Student ID.
+●  	Topic ID.
+●  	Alert type.
+●  	Alert message.
+●  	Severity.
+●  	Read status.
+●  	Created time.
+Teachers can view alerts on the AI Alerts page. After reviewing an alert, the teacher can mark it as read.
+This mechanism supports teachers by reducing the need to manually inspect all chat history. Instead of reading every student conversation, the teacher receives highlighted signals from the system.
+This design also matches the requirement that teachers should be notified when an individual student or a class repeatedly struggles with a specific learning area. In the current prototype, the implemented alert is mainly based on repeated questions by student and topic; class-level interpretation can be derived when many students in the same class trigger alerts on the same topic.
+4.10. Teacher Decision Support Process
+After an alert is generated, the teacher uses the AI Alerts page and class analytics section to make a teaching decision. The system does not automatically decide what action must be taken. It only provides information to support the teacher’s judgment.
+
+Figure 4.9. Teacher Decision Support Process
+The teacher decision process can be described as follows:
+Teacher views assigned classes
+-> Teacher opens class detail
+-> Teacher checks learning analytics
+-> Teacher opens AI alerts
+-> Teacher reads repeated-question alert
+-> Teacher identifies student and topic
+-> Teacher decides an intervention action
+ 
+Possible teacher actions include:
+Decision Action
+Description
+Review topic in class
+The teacher explains the topic again in the next class.
+Contact student
+The teacher directly supports the student who repeatedly asked the same topic.
+Add materials
+The teacher uploads or prepares more learning materials.
+Create extra exercise
+The teacher gives more practice questions related to the topic.
+Monitor later
+The teacher keeps observing the student’s future interactions.
+
+The alert does not mean that the student is weak or failing. It only means that the system has detected repeated questions and suggests that the teacher should pay attention.
+A key defense statement for the report is:
+The system does not predict final grades or make automatic decisions about student performance. It only provides early behavioral signals to support teacher observation and intervention.
+ 
+4.11. Admin Decision Support
+Although the main decision support target is the teacher, the system also provides basic support for Admin. The Admin Dashboard shows overall statistics of the system, such as:
+●  	Total users.
+●  	Total admins.
+●  	Total teachers.
+●  	Total students.
+●  	Total courses.
+●  	Total classes.
+●  	Total lessons.
+●  	Total enrollments.
+●  	Total chat sessions.
+●  	Total chat messages.
+●  	Total alerts.
+●  	Total unread alerts.
+
+Figure 4.10. Admin Statistics Dashboard for Decision Support
+These statistics help Admin understand the current scale and activity level of the system. For example, Admin can observe whether the number of chat messages is increasing, whether alerts are being generated, and whether classes and users are properly created.
+In the current implementation, Admin decision support is mainly descriptive. The system does not evaluate teacher performance and does not automatically recommend class allocation. Those functions can be considered future development.
+4.12. Student Support Mechanism
+The system also supports students directly through chatbot interaction and chat history. The student can ask questions, receive explanations, view related lesson references, and revisit previous conversations.
+
+Figure 4.11. Student Learning Support Flow
+The student support flow is:
+Student opens AI Assistant
+-> Student asks question
+-> System retrieves related lessons
+-> System generates answer
+-> Student reads explanation
+-> Student reviews related lesson references
+-> Student can later review chat history
+This mechanism helps students learn more independently. However, the current system does not yet provide automatic personalized study recommendations. The related lessons are shown only as references connected to the chatbot answer.
+Therefore, the report should not claim that the system has a complete personalized learning path recommendation module. It only provides chatbot support, related lesson references, and chat history review.
+4.13. Explainability of the Decision Support Mechanism
+Explainability is important in a Decision Support System, especially in education. Teachers need to understand why the system generates an alert or selects a lesson. The current system uses simple and explainable rules.
+Mechanism
+Explanation
+Topic detection
+Based on keyword matching.
+Lesson retrieval
+Based on title and content keyword overlap.
+Retrieval score
+3 × title_overlap + 1 × content_overlap.
+Repeat score
+min(1.0, n / 5.0).
+Alert threshold
+Alert is generated when repeated questions reach 3 or more.
+Alert severity
+Medium for 3–4 repeated questions, high for 5 or more.
+
+ 
+
+Figure 4.12. Explainability of Scoring and Alert Rules
+This explainability is useful for system defense. The project does not depend on a black-box machine learning model for alerts. Instead, it uses rule-based analytics that can be understood and verified manually.
+However, this also means that the model is simple. It may miss complex learning behaviors that cannot be captured by keyword matching or repeated-question counts. This limitation is acceptable for a prototype and can be improved in future versions.
+4.14. Limitations of the Current Decision Support Mechanism
+The current decision support mechanism is intentionally simple and suitable for a local prototype. It has several limitations:
+The system uses keyword-based topic detection, so it may not understand paraphrased questions.
+The retrieval module uses keyword scoring, not semantic vector search.
+The analytics mechanism mainly focuses on repeated-question behavior.
+The system does not implement a full Engagement Score based on SAW/MCDM in the current code.
+Topic diversity is not fully implemented as a current feature.
+Engagement ranking is not implemented as a current feature.
+Top topics chart and activity trend chart are not treated as completed functions.
+The system does not predict student grades.
+The system does not automatically decide teacher actions.
+The current evaluation uses simulated data rather than real classroom data.
+These limitations should be clearly stated in the report to avoid overclaiming. The system should be positioned as a prototype DSS that provides early behavioral signals, not as a complete learning analytics or prediction platform.
+4.15. Future Extension of the Decision Support Mechanism
+The current decision support mechanism can be extended in several directions.
+4.15.1. Vector-based Retrieval
+The keyword retrieval module can be upgraded to embedding-based retrieval using a vector database such as Chroma, Pinecone, or pgvector. This would help the system understand semantic similarity and paraphrased questions better.
+4.15.2. Engagement Score
+A future version can implement a complete Engagement Score using multiple indicators such as session activity, repeat behavior, and topic diversity. The score can be designed as a weighted scoring model, but the weights should be validated with real data or teacher feedback.
+4.15.3. Topic Diversity
+The system can calculate how diverse a student’s questions are. If a student asks many questions but only about one topic, the system may generate a narrow-topic alert.
+4.15.4. Low Activity Alert
+The system can detect students who have no chatbot sessions or very low interaction within a recent period. This can help teachers identify passive students.
+4.15.5. Teacher-adjustable Thresholds
+Teachers can be allowed to adjust alert thresholds. For example, one teacher may want alerts after 3 repeated questions, while another may prefer alerts after 5 repeated questions.
+4.15.6. Personalized Learning Recommendation
+The system can recommend lessons, exercises, or review materials based on each student’s chat history and repeated topics.
+These extensions can improve the decision support capability of the system, but they are not part of the completed current implementation.
+4.16. Chapter Summary
+This chapter presented the decision support mechanism of the DS Chatbot System. The system uses chatbot interactions as learning behavior data. Student questions are stored, topics are detected, related lessons are retrieved, and chatbot answers are generated. The stored chat data is then used by the analytics engine to detect repeated-question behavior.
+The current analytics mechanism computes repeat scores based on the number of times a student asks about the same topic in a recent 7-day period. If the number of repeated questions reaches the threshold, the system generates a teacher alert. The alert severity is medium for 3-4 repeated questions and high for 5 or more repeated questions.
+The system supports teacher decision-making by showing class analytics and AI alerts. However, the teacher remains the final decision-maker. The system does not predict grades and does not make automatic decisions about student performance.
+The chapter also discussed admin decision support, student support, explainability, current limitations, and future extensions. Overall, the decision support mechanism is simple, explainable, and consistent with the current implementation of the system.
+ 
+
+ 
+CHAPTER 5. SYSTEM IMPLEMENTATION AND DEPLOYMENT
+5.1. Development Environment
+The DS Chatbot System is implemented as a full-stack web application. The backend is built with FastAPI, the frontend is built with React and Vite, and the database uses MySQL. The system is developed and tested in a local environment for demonstration purposes.
+Figure 5.1. Development Environment Overview [13] 
+The main development environment is summarized in Table 5.1.
+Table 5.1. Development Environment
+Component
+Technology / Tool
+Description
+Operating System
+Windows
+Local development and demo environment.
+IDE
+Visual Studio Code
+Used for editing backend and frontend source code.
+Backend Framework
+FastAPI
+Provides RESTful APIs for the system.
+Backend Server
+Uvicorn
+Runs the FastAPI application in development mode.
+Frontend Framework
+React
+Builds the user interface.
+Frontend Build Tool
+Vite
+Provides fast development server and build process.
+Programming Language
+Python, TypeScript
+Python for backend, TypeScript for frontend.
+Styling
+Tailwind CSS
+Used for frontend UI styling.
+Database
+MySQL
+Stores system data.
+Database Tool
+XAMPP / phpMyAdmin
+Used to run and manage MySQL locally.
+ORM
+SQLAlchemy
+Maps Python models to MySQL tables.
+Authentication
+JWT, bcrypt
+JWT for token-based authentication, bcrypt for password hashing.
+Version Control
+Git/GitHub
+Used to manage source code.
+
+The current version is designed as a localhost prototype. It is not deployed to a production cloud server. This scope is suitable for a course project because the main objective is to demonstrate system design, chatbot flow, retrieval, analytics, and teacher decision support.
+5.2. Source Code Structure
+The source code is organized into three main parts: backend, frontend, and database. In addition, the project provides setup scripts to simplify installation and execution.
+Figure 5.2. Source Code Structure in VS Code[14] 
+The separation of backend, frontend, and database files makes the system easier to maintain. Backend logic is separated into routers and services. Frontend code is separated into context, layouts, libraries, and pages. Database scripts are stored in the database folder.
+5.3. Database Setup
+The database is created using MySQL. The project provides two main SQL files: schema.sql and seed.sql.
+File
+Purpose
+database/schema.sql
+Creates the database schema and tables.
+database/seed.sql
+Inserts sample data for demo and testing.
+
+Figure 5.3. XAMPP MySQL Running [15] 
+Figure 5.4. phpMyAdmin Database ds_chatbot [16] 
+The database setup process is as follows:
+mysql -u root < database/schema.sql
+mysql -u root < database/seed.sql
+If MySQL requires a password, the command can be changed to:
+mysql -u root -p < database/schema.sql
+mysql -u root -p < database/seed.sql
+The main database name is:
+ds_chatbot
+After importing the database, the following tables should be created:
+Table
+Description
+users
+Stores Admin, Teacher, and Student accounts.
+courses
+Stores course information.
+classes
+Stores class information.
+class_students
+Stores student enrollment data.
+schedules
+Stores class schedules.
+lessons
+Stores lesson content for retrieval.
+question_topics
+Stores predefined question topics.
+chat_sessions
+Stores chatbot sessions.
+chat_messages
+Stores chatbot messages.
+learning_analytics
+Stores learning analytics records.
+teacher_alerts
+Stores teacher alerts.
+
+Figure 5.5. users Table in phpMyAdmin[17] 
+Figure 5.6. classes and class_students Tables in phpMyAdmin[18] 
+Figure 5.7. lessons Table in phpMyAdmin [19] 
+Figure 5.8. chat_messages Table in phpMyAdmin[20] 
+Figure 5.9. learning_analytics Table in phpMyAdmin [21] 
+Figure 5.10. teacher_alerts Table in phpMyAdmin[22] 
+Because the seed file may contain demo password hashes, the project provides a script to re-hash the demo account passwords. This ensures that the login function works correctly with bcrypt.
+cd backend
+python -m scripts.fix_demo_passwords
+5.4. Backend Implementation
+The backend is implemented using FastAPI. It provides RESTful APIs for authentication, user management, academic management, chatbot processing, analytics, alerts, and admin statistics.
+Figure 5.11. Backend Folder Structure [23] 
+5.4.1. Backend Main Files
+Table 5.2. Main Backend Files
+File
+Description
+app/main.py
+FastAPI entry point. It registers routers and middleware.
+app/config.py
+Loads application settings from .env.
+app/database.py
+Creates SQLAlchemy engine and database session.
+app/models.py
+Defines ORM models for database tables.
+app/schemas.py
+Defines Pydantic request and response schemas.
+app/security.py
+Handles password hashing and JWT token creation.
+app/deps.py
+Provides authentication and role guard dependencies.
+
+Figure 5.12. Backend main.py and Router Registration[24] 
+5.4.2. Backend Routers
+The backend routers are placed in the app/routers folder.
+Table 5.3. Backend Routers
+Router
+Main APIs
+Responsibility
+auth.py
+/api/auth/login, /api/auth/register, /api/auth/me
+Authentication and user identity.
+users.py
+/api/users
+User listing, activation/deactivation, and deletion.
+academic.py
+/api/courses, /api/classes, /api/schedules, /api/lessons
+Course, class, schedule, and lesson management.
+chat.py
+/api/chat/ask, /api/chat/sessions
+Chatbot question-answering and chat history.
+analytics.py
+/api/analytics, /api/alerts
+Learning analytics and teacher alerts.
+admin.py
+/api/admin/stats
+Admin dashboard statistics.
+
+This router-based structure improves maintainability because each module has its own responsibility.
+5.4.3. Backend Services
+The backend service modules are placed in app/services.
+Table 5.4. Backend Services
+Service
+Description
+retrieval.py
+Implements keyword-based retrieval over the lessons table.
+llm.py
+Provides a provider layer for Mock, Gemini, OpenAI, and Ollama.
+
+The Retrieval Service is responsible for finding related lessons. It tokenizes the student question, removes stopwords, searches candidate lessons, computes keyword scores, and returns the top related lessons.
+The LLM Service is responsible for generating chatbot answers. The active provider is selected through the LLM_PROVIDER variable in .env.
+5.5. Backend Configuration
+The backend uses a .env file for configuration. The project provides .env.example as a template.
+Figure 5.13. Backend .env.example Configuration [25] 
+Important configuration groups include:
+Configuration
+Description
+Application settings
+Application name, environment, debug mode, secret key, token expiration.
+Database settings
+MySQL host, port, username, password, and database name.
+LLM provider settings
+Provider type and API keys or local model information.
+CORS settings
+Allowed frontend origins.
+
+Example configuration:
+APP_NAME=DS Chatbot
+ENV=dev
+DEBUG=True
+SECRET_KEY=change-me-to-a-long-random-string
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+ 
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=ds_chatbot
+ 
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-proj-***
+OPENAI_MODEL=gpt-4o-mini
+ 
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+When adding screenshots to the report, secret values such as API keys and real passwords should be hidden or blurred.
+5.6. Authentication and RBAC Implementation
+Authentication is implemented using JWT access tokens. Passwords are stored as bcrypt hashes. When a user logs in, the backend verifies the email and password, checks whether the account is active, and returns an access token.
+Figure 5.14. Authentication and RBAC Implementation [26] 
+The authentication flow is:
+User enters email and password
+-> Backend verifies credentials
+-> Backend creates JWT token
+-> Frontend stores token in localStorage
+-> Frontend attaches token to API requests
+-> Backend validates token and role
+ 
+The backend uses role guard dependencies to protect APIs. Examples include:
+Permission Type
+Purpose
+get_current_user
+Gets the user from the JWT token.
+require_admin
+Allows only Admin users.
+require_teacher
+Allows Teacher/Admin users depending on route design.
+Student check in chatbot endpoint
+Ensures only Student can call /api/chat/ask.
+
+The chatbot asking endpoint is protected by an explicit role check. Admin and Teacher cannot use the student-only chatbot endpoint. This matches the requirement that the chatbot asking function is only available to students.
+The Login Page also provides three role tabs: Admin, Teacher, and Student. After login, the frontend validates whether the authenticated account role matches the selected tab. If a user enters correct credentials but selects the wrong role tab, the interface displays a warning message such as “This account belongs to the teacher group”, instead of redirecting the user to an incorrect portal.
+In the current implementation, password hashing is handled by the bcrypt package directly rather than through passlib. This design avoids compatibility issues between passlib and bcrypt 4.x while still ensuring that user passwords are not stored in plain text.
+5.7. Chatbot Module Implementation
+The chatbot module is implemented mainly in the Chat Router and two service modules: Retrieval Service and LLM Service.
+Figure 5.15. Chatbot Module Implementation[27] 
+The chatbot processing flow is:
+Student sends question
+-> Chat Router receives request
+-> Backend checks student role
+-> Create or retrieve chat session
+-> Detect topic
+-> Search related lessons
+-> Save student message
+-> Call LLM provider
+-> Save bot message
+-> Return answer and lesson references
+ 
+The chatbot module handles the following functions:
+Function
+Description
+Create chat session
+Creates a new session if no session_id is provided.
+Validate session ownership
+Ensures the session belongs to the current student.
+Detect topic
+Uses keyword rules to detect question topic.
+Retrieve lessons
+Finds related lessons by keyword scoring.
+Generate answer
+Calls LLM provider to generate chatbot answer.
+Save messages
+Saves both student question and bot answer.
+Return lesson references
+Returns related lessons with scores.
+
+The chatbot endpoint is:
+POST /api/chat/ask
+The endpoint returns information such as:
+Response Data
+Description
+answer
+Chatbot answer.
+session_id
+Current chat session ID.
+topic
+Detected topic, if available.
+lesson_refs
+Related lessons returned by retrieval.
+response_time_ms
+Response time of the chatbot process.
+
+The topic detection mechanism is implemented using keyword rules over predefined Data Science topics. In the current version, the system supports an extended set of 18 topics, including Python, Pandas, NumPy, Visualization, Decision Tree, Neural Network, Clustering, Association Rules, Text Mining, Web Mining, Big Data, Data Warehouse, Classification, Regression, Model Evaluation, Data Cleaning, Feature Engineering, and Statistics. This makes the chatbot flow more useful for analytics because detected topics can be stored with student messages and later used for repeated-question alerts.
+5.8. Retrieval Implementation
+The Retrieval Service uses keyword-based scoring. It does not use a real vector database in the current version.
+Figure 5.16. Keyword Retrieval Implementation[28] 
+The retrieval pipeline is:
+Question
+-> Tokenization
+-> Stopword removal
+-> Candidate lesson search
+-> Score calculation
+-> Ranking
+-> Return top-k lessons
+ 
+The scoring rule is:
+score = 3 × title_overlap + 1 × content_overlap
+ 
+This means that a keyword found in the lesson title has a higher weight than a keyword found only in the lesson content. This design is simple but explainable.
+Example:
+Question: "What is pandas groupby used for?"
+ 
+Tokens: pandas, groupby
+ 
+Possible related lesson:
+"Data Aggregation with Pandas GroupBy"
+ 
+Reason:
+The tokens appear in the lesson title, so the lesson receives a higher score.
+ 
+The system returns up to the top 3 related lessons. These lessons are used as context for the chatbot answer and are also displayed to the student as lesson references.
+This retrieval implementation is suitable for a prototype because it is easy to run locally and does not require embedding APIs or vector database infrastructure. However, it may not handle semantic similarity or paraphrased questions well.
+5.9. LLM Provider Implementation
+The LLM module is designed as a provider layer. This means that the chatbot can use different answer generation providers depending on the configuration.
+Figure 5.17. LLM Provider Layer Implementation [29] 
+Supported providers include:
+Provider
+Description
+mock
+Returns a development/testing response without calling external APIs.
+gemini
+Uses Gemini API when configured.
+openai
+Uses OpenAI API when configured.
+ollama
+Uses a local Ollama model.
+
+The provider is selected using the .env variable:
+For the current demonstration, the active provider is OpenAI with the gpt-4o-mini model. The mock provider remains available for development and functional testing, but the reported chatbot response tests should be understood according to the provider configured at testing time.
+LLM_PROVIDER=openai
+The mock provider is useful for testing the complete chatbot flow without relying on an external AI service. However, if the mock provider is used, the report should only evaluate the functional flow, not the real AI answer quality.
+If a real provider is used, the report should clearly record:
+Information
+Example
+Provider
+Gemini / OpenAI / Ollama
+Model
+Model name
+Temperature
+Generation temperature
+Test date
+Date of evaluation
+Retrieval mode
+Keyword-based retrieval
+Number of questions
+Number of test questions
+
+ 
+5.10. Analytics and Alert Implementation
+The Analytics and Alert module is implemented in the Analytics Router. It provides APIs for personal analytics, class analytics, analytics recomputation, viewing alerts, and marking alerts as read.
+Figure 5.18. Analytics and Alert Module Implementation [30] 
+The main analytics recomputation endpoint is:
+POST /api/analytics/recompute
+ 
+This endpoint is admin-only. It analyzes recent student messages and detects repeated-question behavior.
+The recomputation process is:
+Get recent student messages
+-> Group by student_id and topic_id
+-> Count repeated questions
+-> Skip groups with count < 3
+-> Find student class and teacher
+-> Calculate repeat_score
+-> Update learning_analytics
+-> Create teacher_alert if needed
+ 
+The repeat score formula is:
+repeat_score = min(1.0, n / 5.0)
+ 
+Where n is the number of times a student asked about the same topic in the recent analysis period.
+The alert severity rule is:
+Condition
+Alert Type
+Severity
+3 <= n < 5
+repeat_question
+medium
+n >= 5
+repeat_question
+high
+
+The generated alerts are stored in the teacher_alerts table. Teachers can view them through:
+GET /api/alerts
+ 
+Teachers can mark an alert as read using:
+PATCH /api/alerts/{alert_id}/read
+
+This implementation supports the decision support objective of the system. The system detects repeated-question behavior and provides teacher-facing alerts, but the teacher remains the final decision-maker.
+In addition to the admin-only recomputation endpoint, the current system also checks repeated-question conditions immediately after each student question is submitted through /api/chat/ask. This real-time alert check is handled by the alert service function maybe_create_repeat_alert(), so repeated-question alerts can be created or updated without waiting for an Admin to manually run analytics recomputation.
+5.11. PDF Ingest Implementation
+The system provides scripts for importing lesson content into the lessons table so that the Retrieval Module can search learning materials when students ask questions. The main script is scripts/ingest_pdf.py, which extracts text from a PDF file, splits content into sections or chapters, cleans the extracted text, and stores the result as lesson records linked to a selected course.
+In the demo environment, the original Nathan George PDF file could not be used reliably because the file produced an end-of-file extraction error. Therefore, the demonstration used a smaller Data Science learning material file, named sach.pdf or SÁCH.txt depending on the local copy, which was successfully imported into the lessons table. The imported content produced approximately 15 lesson records, each containing about 1,500 to 3,000 characters of learning content.
+The project also supports manual lesson seeding through seed data when PDF ingestion is not available. This fallback approach ensures that the chatbot can still retrieve related lessons during demonstration and testing.
+The ingest process can be summarized as follows:
+Read learning material file -> Extract text -> Split content by heading or section -> Clean text -> Create lesson records -> Store lessons in the database -> Use lessons for keyword-based retrieval
+Example command:
+cd backend
+ python -m scripts.ingest_pdf "../sach.pdf" --course DS101 --replace
+The --replace option allows the script to replace existing imported lessons for the selected course. This is useful during development when the lesson data needs to be refreshed. Although the current retrieval method uses keyword scoring, the embedding_id field is kept in the lessons table so that the system can be extended with vector-based retrieval in the future.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+5.12. Frontend Implementation
+The frontend is implemented with React, Vite, TypeScript, React Router, Axios, and Tailwind CSS.
+Figure 5.20. Frontend Folder Structure [31] 
+5.12.1. Frontend Core Files
+Table 5.5. Main Frontend Files
+File
+Description
+AuthContext.tsx
+Manages login state, user information, token, and logout.
+api.ts
+Configures Axios client and attaches token to requests.
+types.ts
+Defines shared TypeScript types.
+App.tsx
+Defines application routes and role-based navigation.
+AdminLayout.tsx
+Layout for admin pages.
+TeacherLayout.tsx
+Layout for teacher pages.
+StudentLayout.tsx
+Layout for student pages.
+
+5.12.2. Role-based Pages
+Table 5.6. Frontend Pages
+Role
+Page
+Route
+Public
+Login
+/login
+Admin
+Admin Dashboard
+/admin
+Admin
+Teachers
+/admin/teachers
+Admin
+Students
+/admin/students
+Admin
+Courses
+/admin/courses
+Admin
+Classes
+/admin/classes
+Teacher
+My Classes
+/teacher
+Teacher
+Class Detail
+/teacher/classes/:classId
+Teacher
+Schedules
+/teacher/schedules
+Teacher
+AI Alerts
+/teacher/alerts
+Student
+Dashboard
+/student
+Student
+AI Assistant
+/student/chat
+Student
+Schedules
+/student/schedules
+Student
+Chat History
+/student/history
+Admin
+Chatbox
+/admin/chatbox
+
+The frontend uses role-based layouts to separate the interface for Admin, Teacher, and Student. This improves usability and prevents users from seeing unrelated functions.
+5.13. Frontend Role-based Interface
+5.13.1. Login Page
+The Login Page is used by all roles. After successful login, the frontend stores the token and user data in localStorage and redirects the user according to role.
+
+Figure 5.21. Login Page Screenshot 
+5.13.2. Admin Portal
+The Admin Portal contains system statistics and management pages.
+
+Figure 5.22. Admin Dashboard Screenshot 
+Admin pages include:
+Dashboard.
+Teachers.
+Students.
+Courses.
+Classes.
+
+Figure 5.23. Admin Teachers Page Screenshot 
+
+Figure 5.24. Admin Students Page Screenshot 
+
+Figure 5.25. Admin Courses Page Screenshot 
+
+Figure 5.26. Admin Classes Page Screenshot
+
+Figure Admin controlling page AI chatbox 
+The Admin Dashboard displays system counters from the /api/admin/stats endpoint. This ensures that dashboard data is retrieved from the database through API rather than hard-coded in the frontend.
+5.13.3. Teacher Portal
+The Teacher Portal focuses on assigned classes, schedules, class analytics, and AI alerts.
+
+Figure 5.27. Teacher My Classes Page Screenshot 
+
+Figure 5.28. Teacher Class Detail Page Screenshot 
+The Teacher Class Detail page contains:
+Student list section.
+Schedule section.
+Learning analytics section.
+The Learning Analytics section is not a separate page in the current implementation. It is part of the class detail page.
+
+Figure 5.29. Teacher Schedules Page Screenshot 
+
+Figure 5.30. Teacher AI Alerts Page Screenshot
+The AI Alerts page shows alerts generated from repeated-question behavior. Teachers can mark alerts as read after checking them.
+5.13.4. Student Portal
+The Student Portal focuses on learning support.
+
+Figure 5.31. Student Dashboard Screenshot 
+The Student Dashboard includes enrolled classes and personal analytics section. The personal analytics section is not a separate page in the current implementation.
+
+Figure 5.32. Student AI Assistant Screenshot 
+The AI Assistant page allows students to ask Data Science questions. The system returns chatbot answers and related lesson references.
+
+Figure 5.33. Student Schedules Page Screenshot 
+
+Figure 5.34. Student Chat History Page Screenshot 
+The Chat History page allows students to review previous chat sessions and messages.
+5.14. Running the System
+The system can be run manually or by using the provided scripts.
+5.14. Running the System
+The system can be run manually or by using the provided scripts.
+5.14.1. Quick Start with Scripts
+The project provides PowerShell and batch scripts for setup and startup.
+.\setup.ps1
+.\start-dev.ps1
+ 
+If PowerShell blocks scripts, the execution policy can be changed:
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
+Alternatively, batch files can be used:
+setup.bat
+Start-dev.bat
+
+Figure 5.35. Running setup.ps1 Script  
+
+Figure 5.36. Running start-dev.ps1 Script 
+5.14.2. Manual Backend Startup
+To run the backend manually:
+cd backend
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+uvicorn app.main:app --reload --port 8000
+ 
+ Figure 5.37. Uvicorn Backend Running [3] 
+The backend URLs are:
+URL
+Purpose
+http://localhost:8000
+Backend base URL.
+http://localhost:8000/docs
+Swagger UI.
+http://localhost:8000/api/health
+Health check endpoint.
+
+
+Figure 5.38. Swagger UI Screenshot 
+
+Figure 5.39. API Health Check Screenshot
+5.14.3. Manual Frontend Startup
+To run the frontend manually:
+cd frontend
+npm install
+npm run dev
+
+Figure 5.40. Vite Frontend Running
+The frontend URL is: http://localhost:5173
+5.15. Demo Accounts
+After importing seed data and running the password re-hashing script, the system provides demo accounts for three roles.
+Table 5.7. Demo Accounts
+Role
+Email
+Password
+Admin
+admin@uni.edu.vn
+123456
+Teacher
+huong.tt@uni.edu.vn
+123456
+Student
+an.ph@student.uni.edu.vn
+123456
+
+These accounts are used only for local testing and demonstration. In a real deployment, stronger passwords and secure account management policies would be required.
+5.16. Deployment Scope
+The current system is deployed in a local development environment. It is not deployed to a public production server. The local deployment scope includes:
+Component
+Local Deployment
+Frontend
+Vite development server at localhost:5173.
+Backend
+Uvicorn server at localhost:8000.
+Database
+MySQL running through XAMPP or local MySQL server.
+API Documentation
+Swagger UI at localhost:8000/docs.
+
+Figure 5.41. Local Deployment Diagram
+The local deployment architecture is:
+Browser
+  ↓
+React Frontend
+http://localhost:5173
+  ↓
+FastAPI Backend
+http://localhost:8000
+  ↓
+MySQL Database
+Localhost:3306
+ 
+This deployment is enough to demonstrate the end-to-end flow of the system, including login, role-based pages, chatbot, retrieval, chat history, analytics, alerts, and admin statistics.
+During local deployment, the React frontend communicates with the FastAPI backend through Axios requests. After login, the frontend attaches the JWT access token in the Authorization: Bearer header. The backend connects to MySQL through SQLAlchemy using the PyMySQL driver.
+5.17. Implementation Consistency with Requirements
+The implementation is consistent with the system requirements defined in Chapter 2 and the system design described in Chapter 3.
+Table 5.8. Requirement and Implementation Mapping
+Requirement Area
+Implementation
+Authentication
+Implemented with JWT and bcrypt.
+Role-based access control
+Implemented in frontend route guards and backend dependencies.
+Admin dashboard
+Implemented with /api/admin/stats.
+User management
+Implemented for Admin through user management pages.
+Course and class management
+Implemented through academic APIs and admin pages.
+Schedule management
+Implemented for Teacher/Admin.
+Student chatbot
+Implemented through /api/chat/ask, restricted to Student.
+Lesson retrieval
+Implemented with keyword scoring over lessons.
+Chat history
+Implemented with chat sessions and chat messages.
+Learning analytics
+Implemented with repeat-question analytics.
+Teacher alerts
+Implemented with repeat-question alert generation.
+PDF ingest
+Implemented through scripts/ingest_pdf.py.
+
+Some advanced functions are not included in the current implementation. For example, the system does not yet implement a full SAW/MCDM Engagement Score, topic diversity, engagement ranking, vector database retrieval, or production cloud deployment. These are considered future development directions.
+Therefore, the implementation should be understood as a faithful prototype of the core requirement rather than a complete production learning platform. The completed scope includes three actors, role-based portals, academic management, chatbot support for Data Science, lesson retrieval, chat history, repeated-question analytics, and teacher alerts. Vector database retrieval, deeper engagement scoring, and large-scale deployment are intentionally described as future development to avoid overclaiming.
+5.18. Chapter Summary
+This chapter described the implementation and deployment of the DS Chatbot System. The system is implemented as a full-stack web application using FastAPI, React, Vite, TypeScript, Tailwind CSS, MySQL, and SQLAlchemy.
+The backend is organized into routers and services. The main routers include authentication, users, academic management, chatbot, analytics, and admin statistics. The main services include keyword retrieval and LLM provider integration. The frontend is organized by context, layouts, API client, and role-based pages for Admin, Teacher, and Student.
+The database is created using schema.sql and initialized using seed.sql. The system also includes scripts for fixing demo passwords and importing PDF content into the lessons table. The chatbot module supports student questions, lesson retrieval, LLM answer generation, message storage, and chat history. The analytics module supports repeated-question analytics and teacher alert generation.
+The system is deployed locally using MySQL, Uvicorn, and Vite. It can be started using provided scripts such as setup.ps1 and start-dev.ps1, or manually through command-line instructions. Overall, the implementation demonstrates the main functions of a Decision Support System prototype for Data Science learning.
+CHAPTER 6. TESTING
+6.1. Testing Objectives
+Testing is an important phase in the development of the DS Chatbot system. The main purpose of this phase is to verify that the system satisfies the functional and non-functional requirements defined in the analysis and design stages. Through testing, the development team can evaluate whether the system operates correctly, whether data is processed consistently, and whether each user role can access only the functions that belong to its permission scope.
+For this project, testing does not only focus on basic web application functions such as login, user management, class management, and authorization. Since the system is designed as an AI chatbot and decision support system for Data Science learning, special attention is given to the Retrieval Module, LLM integration, learning analytics, and automatic teacher alerts. These functions are considered the core of the system because they directly support students in learning and help teachers identify common learning difficulties.
+The testing process also aims to detect implementation errors early and ensure that the system is stable enough for demonstration and academic evaluation. In addition, testing is used to verify that Vietnamese text is displayed correctly, forms are validated properly, and the interface supports the main workflows of Admin, Teacher, and Student.
+The selected test cases are derived from the original functional requirement groups: managing accounts, managing classes and courses, scheduling classes, asking the AI chatbot, storing chat history, detecting repeated questions, notifying teachers, and tracking student learning frequency. This ensures that the testing chapter does not test unrelated functions but focuses on the core educational DSS behavior required by the project.
+6.2. Testing Methods and Tools
+The system was tested mainly through manual acceptance testing. This approach was selected because the project development time was limited and several functions, especially those related to LLM responses, are difficult to verify using fixed automated assertions. However, manual testing was combined with API testing, database inspection, smoke testing, regression testing, and lightweight performance measurement to ensure that the main workflows were tested from different perspectives.
+Technique
+Purpose
+Tool
+Manual functional testing
+Verify end-to-end workflows through the browser
+Edge, Chrome DevTools
+API testing
+Test REST endpoints directly
+Swagger UI, PowerShell Invoke-RestMethod
+Database inspection
+Verify data after API execution
+phpMyAdmin, SQL queries
+Smoke testing
+Check whether the system can build and start successfully
+setup.ps1, start-dev.ps1
+Regression testing
+Re-test old test cases after bug fixes
+Manual execution
+Lightweight performance testing
+Measure chatbot response time with small workloads
+PowerShell loop script
+
+Although the system does not include automated test suites such as Pytest or Jest, the testing process still covers the most important acceptance-level requirements. Each test case was executed manually, and the results were checked through the user interface, API responses, and database records.
+6.3. Testing Scope
+The testing scope was divided into five main test suites. These test suites correspond to the most important business modules of the DS Chatbot system. This structure helps ensure that each core part of the system is verified systematically.
+No.
+Test Suite
+Main Scope
+1
+Authentication and Authorization
+Login, JWT token, RBAC, role-based redirection
+2
+User and Resource Management
+Teacher, student, course, class, and account management
+3
+Class Management and Relationship Constraints
+Student-class enrollment, teacher-class assignment, duplicate constraints
+4
+AI Teaching Assistant
+Retrieval Module, LLM response, topic detection, fallback response
+5
+Learning Analytics and Automatic Alerts
+Repeated question detection, learning analytics update, teacher alert generation
+
+The selected test scope covers both normal user workflows and several exceptional cases. For example, the testing process includes valid login, invalid login, unauthorized access, duplicate email, duplicate enrollment, invalid chatbot input, and teacher alert filtering.
+6.4. Test Case Design and Results
+6.4.1. Authentication and Authorization
+Authentication and authorization are fundamental parts of the system because every main function depends on the identity and role of the user. The system uses JWT token-based authentication and role-based access control to separate the permissions of Admin, Teacher, and Student. Therefore, this test group focuses on login behavior, token validation, role-based redirection, and access control.
+ID
+Description
+Test Steps
+Expected Result
+Result
+TC-AUTH-01
+Valid login
+Submit correct email and password
+HTTP 200, JWT access token returned
+Pass
+TC-AUTH-02
+Invalid password
+Submit correct email with wrong password
+HTTP 401 Unauthorized
+Pass
+TC-AUTH-03
+Non-existing email
+Submit an email not stored in database
+HTTP 401 Unauthorized
+Pass
+TC-AUTH-04
+Expired token
+Use a token with expired time
+Access to protected endpoint is denied
+Pass
+TC-AUTH-05
+Incorrect role tab
+Login with teacher account from student tab
+UI displays a role warning message
+Pass
+TC-AUTH-06
+Role-based redirect
+Login as Admin, Teacher, and Student
+Redirected to the correct dashboard
+Pass
+TC-AUTH-07
+Unauthorized role access
+Student calls an Admin API endpoint
+HTTP 403 Forbidden
+Pass
+
+The test results show that the authentication and authorization module works correctly. Valid accounts can log in successfully, while invalid credentials are rejected. Protected endpoints cannot be accessed without a valid token. In addition, role-based access control works as expected because users cannot access resources outside their permission scope.
+6.4.2. User Management by Admin
+The Admin role is responsible for managing users and system resources. This test group verifies whether Admin can create, update, disable, delete, and assign users correctly. It also checks whether the system prevents invalid operations such as creating duplicate accounts.
+ID
+Description
+Test Steps
+Expected Result
+Result
+TC-USER-01
+Create teacher with multiple classes
+Create a teacher and assign class_ids = [1, 2]
+Teacher is created and linked to both classes
+Pass
+TC-USER-02
+Create student with multiple enrollments
+Create a student enrolled in two classes
+Two records are created in class_students
+Pass
+TC-USER-03
+Duplicate email
+Create a user using an existing email
+HTTP 409 Conflict with duplicate email message
+Pass
+TC-USER-04
+Update teacher information
+Patch teacher full name
+Teacher information is updated in database
+Pass
+TC-USER-05
+Change teacher password
+Patch teacher password
+New bcrypt hash is generated, new login works
+Pass
+TC-USER-06
+Disable account
+Set is_active=false
+User remains in database but cannot log in
+Pass
+TC-USER-07
+Delete teacher
+Delete a teacher account
+Related classes are updated properly
+Pass
+TC-USER-08
+Reassign teacher to class
+Change teacher_id of a class
+Class is linked to the new teacher
+Pass
+
+The results indicate that Admin management functions operate correctly. The system can manage teachers and students, maintain database consistency, and prevent duplicate user accounts. Password updates are also handled securely because the new password is stored as a bcrypt hash rather than plain text.
+6.4.3. Class Management and Relationship Constraints
+The DS Chatbot system includes relationships between students, teachers, classes, and courses. A student can enroll in multiple classes, while a teacher can be assigned to multiple classes. However, each class should have only one active assigned teacher at a time. Therefore, this test group focuses on many-to-many and one-to-many relationship constraints.
+ID
+Description
+Expected Result
+Result
+TC-CLASS-01
+One student is enrolled in multiple classes
+Multiple enrollment records are created
+Pass
+TC-CLASS-02
+One teacher is assigned to multiple classes
+Teacher dashboard displays all assigned classes
+Pass
+TC-CLASS-03
+One class is assigned to one teacher
+New teacher assignment replaces the old one
+Pass
+TC-CLASS-04
+Duplicate enrollment
+Duplicate student-class enrollment is rejected
+Pass
+TC-CLASS-05
+Student count accuracy
+student_count matches COUNT(class_students)
+Pass
+
+The test results confirm that class relationship constraints are handled correctly. Duplicate enrollment is rejected, and the displayed number of students matches the data stored in the database. This ensures that the system can support class management without creating inconsistent records.
+6.4.4. AI Teaching Assistant: Retrieval Module and LLM Integration
+The AI teaching assistant is the central function of the system. When a student asks a question, the system first uses the Retrieval Module to find related lesson content. Then, the selected context is passed to the LLM provider to generate a response. This test group checks whether the retrieval module can return relevant lessons, whether topic detection works correctly, and whether the chatbot can provide acceptable answers.
+ID
+Question
+Expected Top Lesson
+Score
+Topic Detection
+Result
+TC-CHAT-01
+“Decision tree là gì? ”
+Chapter 6 – Decision Trees
+11.0
+Decision Tree
+Pass
+TC-CHAT-02
+“K-means clustering hoạt động như thế nào?”
+Chapter 9 – Cluster Analysis
+8.0
+Cluster Analysis
+Pass
+TC-CHAT-03
+“Pandas groupby là gì?”
+Pandas – Group By and Pivot Table
+5.0
+Pandas
+Pass
+TC-CHAT-04
+“Confusion matrix là gì?”
+Classification and Logistic Regression
+6.0
+Classification
+Pass
+TC-CHAT-05
+“Big Data là gì?”
+Chapter 13 – Big Data
+7.0
+Big Data
+Pass
+TC-CHAT-06
+“Hôm nay trời đẹp”
+No matching lesson
+0
+Null
+Pass
+TC-CHAT-07
+“Empty question”
+Validation error
+—
+—
+Pass
+TC-CHAT-08
+“Invalid token”
+Unauthorized
+—
+—
+Pass
+
+The chatbot test results show that the retrieval module can identify relevant lessons for common Data Science questions. For out-of-scope questions, the system does not find a matching lesson and falls back to a generic response. This behavior is acceptable because the chatbot is designed primarily for Data Science learning support.
+The response time of the chatbot was measured using a small PowerShell loop with ten sample requests while using the OpenAI gpt-4o-mini provider. This is not a full-scale load test, but it provides a basic indication of the system response time when using an external LLM provider.
+Metric
+Value
+Minimum response time
+Approximately 2.0–3.0 seconds after warm-up
+Maximum response time
+Approximately 5.0–10.0 seconds on first request or API delay
+Average response time
+Approximately 4.0–5.0 seconds in the sample test
+Average retrieved lessons per question
+3
+Top-1 retrieval accuracy
+To be updated after re-testing current lesson data
+
+The maximum response time mainly occurred during the first request or external API delay. Since LLM output depends on external providers, response time may vary across different runs.
+6.4.5. Learning Analytics and Automatic Alerts
+The decision support aspect of the system is represented by learning analytics and automatic teacher alerts. The system records question topics, detects repeated questions, updates analytics data, and generates alerts when a student or class repeatedly asks about the same topic. This helps teachers identify difficult topics and adjust their teaching plans.
+ID
+Scenario
+Expected Result
+Result
+TC-ALERT-01
+Student asks the same topic three times within seven days
+repeat_question alert with medium severity is created
+Pass
+TC-ALERT-02
+Student asks the same topic five times
+Severity is upgraded to high
+Pass
+TC-ALERT-03
+Duplicate alert prevention
+Existing alert is updated instead of creating a new one
+Pass
+TC-ALERT-04
+Learning analytics update
+repeat_score is recalculated correctly
+Pass
+TC-ALERT-05
+Teacher marks alert as read
+is_read becomes true and read_at is set
+Pass
+TC-ALERT-06
+Teacher-specific alert filtering
+Teacher only sees alerts from assigned classes
+Pass
+
+The results show that the alert mechanism works correctly. The system can detect repeated learning issues and generate alerts for the correct teacher. Duplicate alerts are also prevented, which helps keep the teacher dashboard clear and useful.
+6.4.6. Frontend User Interface
+Frontend testing was performed to verify whether the user interface supports the main workflows clearly and whether Vietnamese text is displayed correctly. Since the system is used in an educational context, interface clarity and correct UTF-8 rendering are important for user experience.
+ID
+Description
+Expected Result
+Result
+TC-UI-01
+Vietnamese text rendering
+Vietnamese characters are displayed correctly
+Pass
+TC-UI-02
+Login form validation
+Invalid email is highlighted before submission
+Pass
+TC-UI-03
+Empty state display
+Empty data pages show a proper message
+Pass
+TC-UI-04
+Chat loading indicator
+Typing animation is displayed while waiting
+Pass
+TC-UI-05
+Cross-page refresh
+Dropdown data updates after creating a new resource
+Pass
+TC-UI-06
+Mobile responsiveness
+Sidebar collapses on mobile
+Not fully implemented
+
+The frontend test results show that the main desktop workflows are usable. However, mobile responsiveness is not fully completed and is considered a limitation of the current version.
+6.5. Bugs Found and Fixed
+During testing, several defects were found and fixed. These defects were related to database reset, dependency installation, environment configuration, authentication libraries, port conflicts, PDF ingestion, topic detection, realtime alert generation, environment reload, and LLM provider quota. The following table summarizes the main bugs and their solutions.
+No.
+Symptom
+Root Cause
+Resolution
+1
+seed.sql failed with foreign key error
+TRUNCATE was used on referenced tables
+Replaced TRUNCATE with DELETE and reset AUTO_INCREMENT
+2
+Backend failed to start
+Missing pydantic_settings package
+Reinstalled dependencies
+3
+Login failed due to database connection
+Incorrect DB_PASSWORD in .env
+Corrected DB_PASSWORD configuration
+4
+bcrypt compatibility issue
+passlib conflict with bcrypt 4.x
+Removed passlib and used bcrypt directly
+5
+Port 8000 bind error
+Old uvicorn process was still running
+start-dev.ps1 kills old process before restart
+6
+PDF ingestion failed
+PDF source file was corrupted or truncated
+Replaced the source document
+7
+Topic detection returned null
+Topic rule list was incomplete
+Expanded topic detection rules
+8
+Auto-alert did not trigger
+Exception was silently ignored
+Added warning log and fixed alert logic
+9
+LLM provider did not update after .env change
+Uvicorn reload did not reload .env
+Restarted backend process completely
+10
+Gemini quota exceeded
+Free-tier daily request limit
+Switched to OpenAI gpt-4o-mini
+11
+Topic detection returned null for Decision Tree and Neural Network questions
+Initial topic rule list covered only a small number of topics
+Expanded topic detection to 18 Data Science topics and seeded question_topics data
+12
+Realtime alert was not created after /api/chat/ask
+Silent exception handling prevented maybe_create_repeat_alert() from surfacing errors
+Replaced silent handling with warning logs and fixed realtime alert logic
+
+The bug-fixing process shows that testing was useful not only for validating completed functions but also for improving implementation quality. After each fix, related test cases were re-run to confirm that the problem had been resolved and that no major regression occurred.
+6.6. Testing Evidence
+To support the testing results, several screenshots should be included in the final report. These screenshots provide visual evidence that the system was executed and tested in a real environment.
+Figure
+Suggested Screenshot
+Figure 6.1
+Successful Admin login
+Figure 6.2
+Teacher dashboard showing assigned classes
+Figure 6.3
+Student chatbot answer for a Data Science question
+Figure 6.4
+Swagger UI API testing result
+Figure 6.5
+Database records after chat interaction
+Figure 6.6
+Learning analytics records
+Figure 6.7
+Teacher alert dashboard
+Figure 6.8
+User management page after account creation
+
+These figures should be added after the corresponding test sections or grouped at the end of the testing chapter. They will make the testing chapter more convincing and help demonstrate that the tests were performed on the actual system.
+6.7. Testing Limitations
+Although the testing process covered the main business workflows, several limitations remain. First, the system does not currently include automated test suites such as Pytest or Jest. Therefore, regression testing still depends on manual execution and may take more time when the system grows larger.
+Second, performance testing was only conducted at a lightweight level using a small number of requests. The system has not been tested using professional load testing tools such as JMeter or k6. As a result, the current testing results are suitable for academic demonstration but are not enough to guarantee production-level scalability.
+Third, security testing was limited to authentication, authorization, password hashing, and basic access control validation. The system has not been tested through professional penetration testing. SQL injection, XSS, CSRF, and other security risks should be tested more thoroughly in future development.
+Finally, LLM-based responses are non-deterministic. This means that it is difficult to assert the exact response text in a traditional test case. Therefore, chatbot testing focuses mainly on whether the system returns a valid response, whether relevant lesson context is retrieved, and whether the interaction is saved correctly.
+6.8. Conclusion
+The testing results show that the DS Chatbot system satisfies the main acceptance requirements of the project. The system successfully supports the three main user roles: Admin, Teacher, and Student. Core workflows such as authentication, user management, class assignment, chatbot question answering, learning analytics generation, and automatic teacher alerts operate correctly.
+The testing process also identified twelve implementation defects, all of which were fixed and verified again. This improved the stability and reliability of the system before final demonstration.
+Overall, the DS Chatbot system is stable enough for academic presentation and project defense. Future improvements should focus on automated testing, continuous integration, larger-scale performance testing, deeper security validation, and more deterministic evaluation of chatbot responses.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+

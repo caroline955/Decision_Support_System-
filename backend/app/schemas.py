@@ -26,6 +26,13 @@ class RegisterRequest(BaseModel):
     parent_id: Optional[int] = None
 
 
+class CreateTeacherRequest(BaseModel):
+    full_name: str
+    email: EmailStr
+    password: str = Field(min_length=6)
+    class_ids: List[int] = []  # gán GV vào các lớp này (đặt làm GV phụ trách)
+
+
 # --------------------------- Users ---------------------------
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -63,6 +70,16 @@ class ClassOut(ClassIn):
     model_config = ConfigDict(from_attributes=True)
     id: int
     is_active: bool
+    teacher_name: Optional[str] = None
+    course_code: Optional[str] = None
+    student_count: int = 0
+
+
+class ClassPatch(BaseModel):
+    teacher_id: Optional[int] = None
+    name: Optional[str] = None
+    semester: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class EnrollIn(BaseModel):

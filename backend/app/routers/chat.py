@@ -27,6 +27,7 @@ from app.schemas import (
     ChatSessionOut,
     LessonRef,
 )
+from app.services.alerts import maybe_create_repeat_alert
 from app.services.llm import ask_llm
 from app.services.retrieval import detect_topic_slug, search_lessons
 
@@ -134,6 +135,17 @@ async def ask(
     )
     db.add(bot_msg)
     session.message_count += 1
+
+    # 7) Auto-create teacher alert if student keeps asking same topic
+    try:
+        maybe_create_repeat_alert(
+            db, student_id=current.id,
+            topic_id=topic.id if topic else None,
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("alert generation failed: %s", e)
+
     db.commit()
 
     return AskResponse(

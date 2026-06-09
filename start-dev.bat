@@ -1,3 +1,3 @@
 @echo off
-REM Wrapper cho người dùng quen Command Prompt — gọi PowerShell script
-powershell -ExecutionPolicy Bypass -NoProfile -File "%~dp0start-dev.ps1"
+REM Wrapper bypass execution policy
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0start-dev.ps1"

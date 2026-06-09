@@ -1,15 +1,16 @@
 import RoleLayout from "./RoleLayout";
+import { IBell, ICalendar, ISchool } from "../components/icons";
 
 export default function TeacherLayout() {
   return (
     <RoleLayout
-      title="Giáo viên · DS Chatbot"
+      brandTitle="DS Chatbot"
+      brandSubtitle="Giáo viên"
       accent="emerald"
-      homePath="/teacher"
       links={[
-        { to: "/teacher", label: "Lớp của tôi", end: true },
-        { to: "/teacher/schedules", label: "Lịch học" },
-        { to: "/teacher/alerts", label: "Cảnh báo AI" },
+        { to: "/teacher", label: "Lớp của tôi", icon: <ISchool />, end: true },
+        { to: "/teacher/schedules", label: "Lịch giảng dạy", icon: <ICalendar /> },
+        { to: "/teacher/alerts", label: "Cảnh báo AI", icon: <IBell /> },
       ]}
     />
   );

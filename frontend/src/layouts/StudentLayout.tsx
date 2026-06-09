@@ -1,16 +1,17 @@
 import RoleLayout from "./RoleLayout";
+import { IBot, ICalendar, IHistory, IHome } from "../components/icons";
 
 export default function StudentLayout() {
   return (
     <RoleLayout
-      title="Sinh viên · DS Chatbot"
+      brandTitle="DS Chatbot"
+      brandSubtitle="Sinh viên"
       accent="brand"
-      homePath="/student"
       links={[
-        { to: "/student", label: "Trang chủ", end: true },
-        { to: "/student/chat", label: "Trợ giảng AI" },
-        { to: "/student/schedules", label: "Lịch học" },
-        { to: "/student/history", label: "Lịch sử chat" },
+        { to: "/student", label: "Trang chủ", icon: <IHome />, end: true },
+        { to: "/student/chat", label: "Trợ giảng AI", icon: <IBot /> },
+        { to: "/student/schedules", label: "Lịch học", icon: <ICalendar /> },
+        { to: "/student/history", label: "Lịch sử chat", icon: <IHistory /> },
       ]}
     />
   );

@@ -1,3 +1,4 @@
 @echo off
-powershell -ExecutionPolicy Bypass -NoProfile -File "%~dp0setup.ps1"
+REM Wrapper bypass execution policy
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup.ps1"
 pause

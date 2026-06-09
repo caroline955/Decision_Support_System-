@@ -37,14 +37,41 @@ HEADING_RE = re.compile(
 
 
 def extract_text(pdf_path: Path) -> str:
-    reader = PdfReader(str(pdf_path))
+    """Try pypdf first; fall back to pdfplumber for slightly-broken PDFs."""
+    parts: list[str] = []
+
+    # --- attempt 1: pypdf (fast) ---
+    try:
+        reader = PdfReader(str(pdf_path), strict=False)
+        for i, page in enumerate(reader.pages):
+            try:
+                parts.append(page.extract_text() or "")
+            except Exception as e:
+                print(f"  ! pypdf page {i} failed: {e}")
+        text = "\n".join(parts)
+        if len(text) > 1000:
+            return text
+        print("  pypdf returned too little text, trying pdfplumber...")
+    except Exception as e:
+        print(f"  pypdf cannot open: {e} — falling back to pdfplumber")
+
+    # --- attempt 2: pdfplumber (more lenient) ---
     parts = []
-    for i, page in enumerate(reader.pages):
-        try:
-            parts.append(page.extract_text() or "")
-        except Exception as e:
-            print(f"  ! page {i} extract failed: {e}")
-    return "\n".join(parts)
+    try:
+        import pdfplumber  # type: ignore
+
+        with pdfplumber.open(str(pdf_path)) as pdf:
+            for i, page in enumerate(pdf.pages):
+                try:
+                    parts.append(page.extract_text() or "")
+                except Exception as e:
+                    print(f"  ! pdfplumber page {i} failed: {e}")
+        return "\n".join(parts)
+    except ImportError:
+        print("  pdfplumber not installed — `pip install pdfplumber`")
+    except Exception as e:
+        print(f"  pdfplumber failed: {e}")
+    return ""
 
 
 def split_chapters(text: str) -> List[Tuple[str, str]]:
