@@ -1,4 +1,4 @@
-# DS Chatbot — Hệ thống AI hỗ trợ học Data Science
+# DS Chatbot — Hệ thống AI hỗ trợ học 
 
 Đồ án 3 actor (Admin / Giáo viên / Sinh viên), backend FastAPI, frontend Vite + React + Tailwind, database MySQL.
 
