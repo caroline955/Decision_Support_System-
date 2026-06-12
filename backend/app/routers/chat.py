@@ -108,7 +108,23 @@ async def ask(
         snippet = (h.lesson.content or "")[:1200]
         lesson_contexts.append(f"{h.lesson.title}: {snippet}")
 
-    # 4) Save student message
+    # 4) Load conversation history BEFORE adding the new message
+    # (max 6 turns = 3 Q/A) — oldest first
+    history_rows = db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.session_id == session.id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(6)
+    ).scalars().all()
+    history = [
+        {
+            "role": "user" if m.sender == "student" else "assistant",
+            "content": m.content,
+        }
+        for m in reversed(history_rows)
+    ]
+
+    # 5) Save student message
     student_msg = ChatMessage(
         session_id=session.id,
         sender="student",
@@ -119,9 +135,9 @@ async def ask(
     db.add(student_msg)
     session.message_count += 1
 
-    # 5) Ask LLM
+    # 6) Ask LLM with history
     t0 = time.perf_counter()
-    answer = await ask_llm(payload.question, lesson_contexts)
+    answer = await ask_llm(payload.question, lesson_contexts, history=history)
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
 
     # 6) Save bot message

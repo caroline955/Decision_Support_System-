@@ -30,6 +30,24 @@ export const IX = (p: P) => (
 export const ITrash = (p: P) => (
   <svg {...base(p)}><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
 );
+export const IPencil = (p: P) => (
+  <svg {...base(p)}><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+);
+export const ILock = (p: P) => (
+  <svg {...base(p)}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+);
+export const IUnlock = (p: P) => (
+  <svg {...base(p)}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>
+);
+export const IChevronDown = (p: P) => (
+  <svg {...base(p)}><path d="M6 9l6 6 6-6" /></svg>
+);
+export const IChevronUp = (p: P) => (
+  <svg {...base(p)}><path d="M18 15l-6-6-6 6" /></svg>
+);
+export const ISearch = (p: P) => (
+  <svg {...base(p)}><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+);
 export const IFlag = (p: P) => (
   <svg {...base(p)}><path d="M4 22V4M4 4h12l-2 5 2 5H4" /></svg>
 );
@@ -59,9 +77,6 @@ export const IChart = (p: P) => (
 );
 export const IMessage = (p: P) => (
   <svg {...base(p)}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-);
-export const ISearch = (p: P) => (
-  <svg {...base(p)}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
 );
 export const ILogout = (p: P) => (
   <svg {...base(p)}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5M21 12H9" /></svg>

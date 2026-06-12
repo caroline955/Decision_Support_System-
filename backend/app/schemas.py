@@ -174,6 +174,22 @@ class AlertOut(BaseModel):
     message: str
     is_read: bool
     created_at: datetime
+class AlertHistoryMessage(BaseModel):
+    id: int
+    session_id: int
+    question: str
+    answer: Optional[str] = None
+    created_at: datetime
 
+
+class AlertHistoryResponse(BaseModel):
+    alert_id: int
+    alert_type: str
+    student_id: Optional[int]
+    student_name: Optional[str]
+    topic_id: Optional[int]
+    topic_name: Optional[str]
+    total_questions: int
+    messages: List[AlertHistoryMessage]
 
 TokenResponse.model_rebuild()

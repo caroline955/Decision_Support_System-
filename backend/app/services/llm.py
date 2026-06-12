@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import List, Optional
+from typing import Iterable, List, Optional, TypedDict
 
 import httpx
 
@@ -12,37 +12,58 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT = (
-    "Bạn là trợ giảng AI môn Data Science cho sinh viên đại học. "
-    "Trả lời ngắn gọn, có ví dụ Python khi cần. "
-    "Nếu được cung cấp 'Tài liệu tham khảo', hãy ưu tiên dùng nội dung đó. "
-    "Trả lời bằng tiếng Việt."
-)
+class ChatTurn(TypedDict):
+    role: str  # "user" | "assistant"
+    content: str
 
+
+SYSTEM_PROMPT = (
+    "You are an AI teaching assistant for a university-level Data Science course. "
+    "Always respond in the same language as the user's question."
+    "Provide concise answers with Python examples when necessary. "
+    "If 'Reference Material' is provided, prioritize using that content. "
+    "Remember the context of previous questions in the same session to ensure consistent responses "
+    "(for example, when a student says 'do problem 1', 'explain more', 'give another example'). "
+
+    "When writing mathematical formulas, ALWAYS use standard LaTeX. "
+    "Inline math must use the format \\(...\\). "
+    "Block math must use the format \\[...\\]. "
+    "DO NOT use [ ... ] to wrap formulas. "
+    "DO NOT escape LaTeX into regular text. "
+
+    "When writing code, always use markdown code blocks with the syntax hint (e.g., ```python ... ```). "
+    "```python ... ```."
+)
 
 def build_prompt(question: str, lesson_contexts: List[str]) -> str:
     if lesson_contexts:
         ctx = "\n\n".join(
-            f"[Bài {i+1}] {c}" for i, c in enumerate(lesson_contexts)
+            f"[Reference {i+1}] {c}" for i, c in enumerate(lesson_contexts)
         )
         return (
-            f"Tài liệu tham khảo:\n{ctx}\n\n"
-            f"Câu hỏi của sinh viên: {question}\n\n"
-            f"Hãy trả lời dựa trên tài liệu trên (nêu rõ nếu vượt phạm vi)."
+            f"Reference Material:\n{ctx}\n\n"
+            f"Student Question: {question}\n\n"
+            f"Answer in the same language as the student's question. "
+            f"If the question is in English, answer in English. "
+            f"If the question is in Vietnamese, answer in Vietnamese."
         )
-    return f"Câu hỏi của sinh viên: {question}"
 
-
-async def _ask_mock(prompt: str) -> str:
+    return (
+        f"Student Question: {question}\n\n"
+        f"Answer in the same language as the student's question. "
+        f"If the question is in English, answer in English. "
+        f"If the question is in Vietnamese, answer in Vietnamese."
+    )
+async def _ask_mock(prompt: str, history: List[ChatTurn]) -> str:
     return (
         "[MOCK] Đây là câu trả lời giả lập (chưa cấu hình LLM_PROVIDER thật).\n"
-        f"Prompt nhận được dài {len(prompt)} ký tự."
+        f"Prompt {len(prompt)} ký tự, history {len(history)} lượt."
     )
 
 
-async def _ask_gemini(prompt: str) -> str:
+async def _ask_gemini(prompt: str, history: List[ChatTurn]) -> str:
     if not settings.GEMINI_API_KEY:
-        return await _ask_mock(prompt)
+        return await _ask_mock(prompt, history)
     try:
         import google.generativeai as genai
 
@@ -50,27 +71,38 @@ async def _ask_gemini(prompt: str) -> str:
         model = genai.GenerativeModel(
             settings.GEMINI_MODEL, system_instruction=SYSTEM_PROMPT
         )
-        # SDK is sync, run in thread
-        resp = await asyncio.to_thread(model.generate_content, prompt)
+        # Gemini history format: list of {role: 'user'|'model', parts: [text]}
+        gem_history = [
+            {
+                "role": "user" if h["role"] == "user" else "model",
+                "parts": [h["content"]],
+            }
+            for h in history
+        ]
+        chat = model.start_chat(history=gem_history)
+        resp = await asyncio.to_thread(chat.send_message, prompt)
         return (resp.text or "").strip() or "[Gemini không trả về nội dung]"
     except Exception as e:
         logger.exception("Gemini error")
         return f"[Gemini lỗi] {e}"
 
 
-async def _ask_openai(prompt: str) -> str:
+async def _ask_openai(prompt: str, history: List[ChatTurn]) -> str:
     if not settings.OPENAI_API_KEY:
-        return await _ask_mock(prompt)
+        return await _ask_mock(prompt, history)
     try:
         from openai import AsyncOpenAI
 
         client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
+        # OpenAI: role 'user' | 'assistant'
+        for h in history:
+            messages.append({"role": h["role"], "content": h["content"]})
+        messages.append({"role": "user", "content": prompt})
+
         resp = await client.chat.completions.create(
             model=settings.OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
+            messages=messages,
             temperature=0.3,
         )
         return (resp.choices[0].message.content or "").strip()
@@ -79,15 +111,25 @@ async def _ask_openai(prompt: str) -> str:
         return f"[OpenAI lỗi] {e}"
 
 
-async def _ask_ollama(prompt: str) -> str:
+async def _ask_ollama(prompt: str, history: List[ChatTurn]) -> str:
     try:
+        # Build single prompt with history baked in (Ollama /api/generate is single-turn)
+        history_text = ""
+        if history:
+            lines: list[str] = []
+            for h in history:
+                tag = "Sinh viên" if h["role"] == "user" else "Trợ giảng"
+                lines.append(f"{tag}: {h['content']}")
+            history_text = "Lịch sử trao đổi gần nhất:\n" + "\n".join(lines) + "\n\n"
+        full = history_text + prompt
+
         async with httpx.AsyncClient(timeout=60) as client:
             r = await client.post(
                 f"{settings.OLLAMA_BASE_URL}/api/generate",
                 json={
                     "model": settings.OLLAMA_MODEL,
                     "system": SYSTEM_PROMPT,
-                    "prompt": prompt,
+                    "prompt": full,
                     "stream": False,
                 },
             )
@@ -98,13 +140,18 @@ async def _ask_ollama(prompt: str) -> str:
         return f"[Ollama lỗi] {e}"
 
 
-async def ask_llm(question: str, lesson_contexts: Optional[List[str]] = None) -> str:
+async def ask_llm(
+    question: str,
+    lesson_contexts: Optional[List[str]] = None,
+    history: Optional[Iterable[ChatTurn]] = None,
+) -> str:
     prompt = build_prompt(question, lesson_contexts or [])
+    hist = list(history or [])
     provider = (settings.LLM_PROVIDER or "mock").lower()
     if provider == "gemini":
-        return await _ask_gemini(prompt)
+        return await _ask_gemini(prompt, hist)
     if provider == "openai":
-        return await _ask_openai(prompt)
+        return await _ask_openai(prompt, hist)
     if provider == "ollama":
-        return await _ask_ollama(prompt)
-    return await _ask_mock(prompt)
+        return await _ask_ollama(prompt, hist)
+    return await _ask_mock(prompt, hist)

@@ -3,12 +3,19 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user, require_admin
-from app.models import ClassStudent, Class_, User
+from app.models import (
+    ChatSession,
+    ClassStudent,
+    Class_,
+    LearningAnalytics,
+    TeacherAlert,
+    User,
+)
 from app.schemas import UserOut
 from app.security import hash_password
 
@@ -62,6 +69,24 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(404, "User not found")
+
+    # Detach related records để FK constraint không chặn DELETE
+    if user.role == "teacher":
+        # Lớp do GV phụ trách -> teacher_id = NULL (cần admin gán lại)
+        db.execute(
+            update(Class_).where(Class_.teacher_id == user_id).values(teacher_id=None)
+        )
+        # Xoá alert dành cho GV này
+        db.execute(delete(TeacherAlert).where(TeacherAlert.teacher_id == user_id))
+    elif user.role == "student":
+        # Bỏ enroll
+        db.execute(delete(ClassStudent).where(ClassStudent.student_id == user_id))
+        # Xoá chat sessions của SV (cascade messages do FK ON DELETE CASCADE)
+        db.execute(delete(ChatSession).where(ChatSession.student_id == user_id))
+        # Xoá analytics + alerts về SV này
+        db.execute(delete(LearningAnalytics).where(LearningAnalytics.student_id == user_id))
+        db.execute(delete(TeacherAlert).where(TeacherAlert.student_id == user_id))
+
     db.delete(user)
     db.commit()
     return {"ok": True}

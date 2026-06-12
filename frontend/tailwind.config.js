@@ -23,6 +23,15 @@ export default {
         soft: "0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(15,23,42,0.04)",
         card: "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06)",
       },
+      keyframes: {
+        fadeIn: {
+          from: { opacity: "0", transform: "scale(.97)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+      },
+      animation: {
+        fadeIn: "fadeIn .15s ease-out",
+      },
     },
   },
   safelist: [
